@@ -99,3 +99,12 @@ The website and contact endpoint are deployed, but email cannot be delivered unt
 - `npm run ui:test`: desktop, mobile, and client-navigation checks passed.
 - Local root responses carried the expected document policy; cross-origin `text/plain` returned `415` before upstream work; versioned WebP returned immutable cache headers.
 - The maintenance contract is now documented in `SECURITY.md` and `PERFORMANCE.md`.
+
+### Production release
+
+- Release commit: `5f92c459b0fe5c332ab23db0c613d8aa103f8119` (`Harden and optimize personal website`).
+- Pushed the identical commit to `origin/main` and confirmed the remote ref matched.
+- Production deployment: `dpl_HJ8VeRf4Mnv2dCvscVuTRA76c1bC`.
+- Vercel reported the deployment target as `production` and the final state as `READY` after compiling all 21 application routes.
+- Reassigned the canonical alias to the new deployment: `https://andre-huizen.vercel.app`.
+- Read back the live firewall configuration after deployment: `Contact submissions per IP` remained enabled at 5 requests per 3,600 seconds, with no pending draft changes.
