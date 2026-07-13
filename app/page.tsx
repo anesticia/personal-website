@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <>
       <section className="hero">
-        <div className="hero-image" aria-hidden="true"><Image src="/images/reaction-diffusion.png" alt="" fill priority sizes="100vw" /><div className="hero-shade" /></div>
+        <div className="hero-image" aria-hidden="true"><Image src="/images/reaction-diffusion.bf11faa839ec.webp" alt="" fill priority fetchPriority="high" decoding="sync" sizes="100vw" /><div className="hero-shade" /></div>
         <div className="hero-copy">
           <p className="hero-kicker">Andre Huizen · Informatics researcher</p>
           <h1>Learning the rules<br /><em>inside complex systems.</em></h1>
@@ -31,7 +31,7 @@ export default function Home() {
       </section>
 
       <section className="publication-feature">
-        <div className="publication-visual"><Image src="/images/gray-scott.png" alt="Bright spots emerging in a Gray–Scott reaction–diffusion field" fill sizes="(max-width: 900px) 100vw, 50vw" /></div>
+        <div className="publication-visual"><Image src="/images/gray-scott.5f1235deedb5.webp" alt="Bright spots emerging in a Gray–Scott reaction–diffusion field" fill sizes="(max-width: 900px) 100vw, 50vw" /></div>
         <Reveal className="publication-copy"><p className="section-number">03 — Publication</p><p className="publication-year">JSI · {publication.year}</p><h2>Edge information,<br />combined.</h2><p>{publication.title}</p><p className="publication-meta">{publication.venue}, {publication.volume}({publication.issue}), {publication.pages}</p><a className="button button-light" href={publication.url} target="_blank" rel="noreferrer">Read the paper <ExternalIcon /></a></Reveal>
       </section>
 

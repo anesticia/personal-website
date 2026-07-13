@@ -15,7 +15,10 @@
 app/                   Routes, metadata, API, and global styles
 components/            Shared navigation, archive, form, and reveal behavior
 data/site.ts           Canonical profile, publication, and work records
+lib/                   Testable request-admission and security primitives
 public/images/         Approved derivative research images only
+scripts/               Reproducible asset tooling
+tests/                 Unit, route, and real-browser regression coverage
 docs/                  Product, provenance, maintenance, and deployment guidance
 ```
 
@@ -41,9 +44,15 @@ The live site does not call GitHub, ORCID, or the local filesystem at runtime. T
 
 ## Contact flow
 
-The client posts JSON to `/api/contact`. The route validates the payload with Zod, rejects honeypot content, limits repeated submissions per IP within a process, optionally verifies Cloudflare Turnstile, and sends through the Resend HTTP API. It never stores messages.
+The client posts JSON to `/api/contact`. A cheap admission phase first enforces media type, browser origin, declared/actual byte bounds, and a bounded local burst guard. The route then validates the exact payload with Zod, rejects honeypot and control-character content, requires a fully paired or fully disabled Turnstile configuration, bounds each upstream call, and sends to one Resend destination. It never stores messages, and every response is non-cacheable.
 
-In-memory rate limiting is a first boundary, not a distributed guarantee. If abuse appears, replace it with Vercel Firewall rules or a durable rate-limit service while keeping the same route contract.
+The in-memory limiter is secondary. The authoritative production budget is a Vercel Firewall fixed-window rule for `POST /api/contact` at five requests per IP per hour. A durable application limiter remains the documented portability option if the hosting edge changes.
+
+## Motion and image delivery
+
+`Reveal` remains a server component with the original CSS contract. One client `MotionController` owns route reveal observation, which avoids a separate React state/effect/observer for every section and rebinds after client navigation.
+
+Approved source images are encoded as content-hashed lossless WebP files. `public/images/image-manifest.json` proves decoded-pixel equality and records source/output sizes. Hashed files receive immutable one-year caching; Next.js still produces responsive optimized variants.
 
 ## SEO and identity
 

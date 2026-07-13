@@ -1,0 +1,155 @@
+{
+  "completeness": "complete",
+  "deferred": [],
+  "documentType": "codex-security.coverage",
+  "excludePaths": [],
+  "explicitExclusions": [
+    {
+      "pattern": "node_modules/",
+      "reason": "Third-party installed dependency source; assessed through the package lock and npm audit rather than full-file review."
+    },
+    {
+      "pattern": ".next/",
+      "reason": "Generated build output, not source."
+    },
+    {
+      "pattern": "output/",
+      "reason": "Ignored local test and scan artifacts, not deployed source."
+    }
+  ],
+  "includePaths": [
+    "."
+  ],
+  "inventoryStrategy": "repository",
+  "mode": "repository",
+  "openQuestions": [
+    {
+      "followUpPrompt": "Inspect the Vercel Firewall configuration for an atomic per-client POST /api/contact budget and document the verified rule without creating billable infrastructure.",
+      "question": "Is a global POST /api/contact rate-limit rule enabled in the Vercel Firewall for the production project?"
+    }
+  ],
+  "scanId": "f665a003-aace-4658-ac46-8ce82a31b450",
+  "schemaVersion": "1.0",
+  "surfaces": [
+    {
+      "disposition": "no_issue_found",
+      "id": "surface-injection",
+      "label": "Contact command, query, template, and code injection",
+      "notes": "Full route review found no shell, database, dynamic template, eval, or code-execution sink.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Injection and execution sinks"
+    },
+    {
+      "disposition": "rejected",
+      "id": "surface-email-headers",
+      "label": "Contact email field handling",
+      "notes": "Structured Resend JSON fields prevent raw SMTP-header concatenation; control-character rejection remains defense in depth.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Header injection"
+    },
+    {
+      "disposition": "reported",
+      "id": "surface-body-and-rate-limit",
+      "label": "Contact body parsing and abuse controls",
+      "notes": "The instance-local rate-limit finding survived; body and in-memory cardinality candidates were rejected under platform bounds.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Parsing and rate limiting"
+    },
+    {
+      "disposition": "rejected",
+      "id": "surface-outbound-network",
+      "label": "Fixed upstream requests",
+      "notes": "Turnstile and Resend destinations are fixed. Explicit timeouts remain a hardening action, but no attacker-selected destination or attacker-created stall survived.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "SSRF and upstream availability"
+    },
+    {
+      "disposition": "not_applicable",
+      "id": "surface-filesystem",
+      "label": "Runtime filesystem access",
+      "notes": "No filesystem mutation, upload, archive, or attacker-selected path API exists.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "File, upload, and path traversal"
+    },
+    {
+      "disposition": "not_applicable",
+      "id": "surface-authz",
+      "label": "Authentication and object isolation",
+      "notes": "The application has no account, protected object, privileged role, or private state surface.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Authentication and authorization"
+    },
+    {
+      "disposition": "rejected",
+      "id": "surface-browser-rendering",
+      "label": "Static content and structured rendering",
+      "notes": "Values are developer-controlled and are escaped or serialized for their contexts; no lower-privileged authoring boundary exists.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "XSS, XML, and JSON-LD injection"
+    },
+    {
+      "disposition": "reported",
+      "id": "surface-browser-third-party",
+      "label": "Contact browser boundary",
+      "notes": "The cross-origin submission finding survived; CSP and script allowlisting are tracked as hardening.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Cross-origin actions and third-party script policy"
+    },
+    {
+      "disposition": "reported",
+      "id": "surface-environment",
+      "label": "Environment and provider configuration",
+      "notes": "Partial Turnstile configuration survived as a finding; secrets remain server-only.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Secret handling and fail-open configuration"
+    },
+    {
+      "disposition": "no_issue_found",
+      "id": "surface-dependencies",
+      "label": "Dependencies and build configuration",
+      "notes": "Production and full npm audits reported zero known vulnerabilities.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Supply chain and framework exposure"
+    },
+    {
+      "disposition": "no_issue_found",
+      "id": "surface-response-policy",
+      "label": "Browser and CDN response policy",
+      "notes": "No standalone vulnerability survived; explicit security headers, no-store API responses, and immutable versioned assets are tracked as hardening.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Framing, MIME, transport, and caching"
+    },
+    {
+      "disposition": "no_issue_found",
+      "id": "surface-privacy",
+      "label": "Public bundle and repository data",
+      "notes": "Tracked-file secret scanning found no credential pattern or private local path.",
+      "receiptRefs": [
+        "artifacts/03_coverage/repository_coverage_ledger.md"
+      ],
+      "riskArea": "Secrets and private provenance"
+    }
+  ]
+}

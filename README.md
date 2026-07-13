@@ -18,6 +18,7 @@ Open `http://localhost:3000`.
 Production verification:
 
 ```powershell
+npx playwright install chromium
 npm test
 ```
 
@@ -28,6 +29,9 @@ npm test
 - [Content provenance and privacy ledger](docs/CONTENT-PROVENANCE.md)
 - [Adding research or projects](docs/ADDING-CONTENT.md)
 - [Deployment and operations](docs/DEPLOYMENT.md)
+- [Security model, controls, and incident response](docs/SECURITY.md)
+- [Performance budgets and visual verification](docs/PERFORMANCE.md)
+- [Dated security audit package](docs/audits/2026-07-13-security/README.md)
 - [Design system](docs/DESIGN.md)
 - [Implementation and verification log](docs/IMPLEMENTATION-LOG.md)
 
@@ -39,9 +43,11 @@ Copy `.env.example` to `.env.local` and configure Resend:
 RESEND_API_KEY=
 CONTACT_TO_EMAIL=
 CONTACT_FROM_EMAIL=Portfolio <onboarding@resend.dev>
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
 ```
 
-Cloudflare Turnstile is optional. Without mail credentials, the API returns a safe configuration message and no data is stored.
+Cloudflare Turnstile is optional, but its site key and secret must be configured together. A partial configuration fails closed. Without mail credentials, the API returns a safe configuration message and no data is stored.
 
 ## Core principles
 

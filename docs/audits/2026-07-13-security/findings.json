@@ -1,0 +1,355 @@
+{
+  "documentType": "codex-security.findings",
+  "findings": [
+    {
+      "attackPath": {
+        "dataflow": "Anonymous JSON body -> POST /api/contact -> verifyTurnstile missing-secret branch -> verification guard passes -> authenticated Resend request",
+        "evidenceRefs": [
+          "turnstile-fail-open",
+          "turnstile-delivery"
+        ],
+        "reachability": "A remote unauthenticated caller can trigger the path when mail delivery is configured and exactly one Turnstile half is configured. The destination remains fixed to the site owner."
+      },
+      "codeEvidence": [
+        {
+          "code": "const secret = process.env.TURNSTILE_SECRET_KEY;\nif (!secret) return true;\nif (!token) return false;",
+          "endLine": 28,
+          "explanation": "The helper treats every missing secret as disabled mode, even when the public site key says verification is expected.",
+          "id": "turnstile-fail-open",
+          "label": "Absent secret is accepted",
+          "language": "typescript",
+          "path": "app/api/contact/route.ts",
+          "role": "root_control",
+          "startLine": 25
+        },
+        {
+          "code": "if (!(await verifyTurnstile(parsed.data.turnstileToken, ip))) return NextResponse.json(...);\n...\nconst response = await fetch(\"https://api.resend.com/emails\", {",
+          "endLine": 52,
+          "explanation": "A true result carries the anonymous submission through the apparent verification guard to authenticated email delivery.",
+          "id": "turnstile-delivery",
+          "label": "Verification result gates Resend",
+          "language": "typescript",
+          "path": "app/api/contact/route.ts",
+          "role": "sink",
+          "startLine": 46
+        }
+      ],
+      "confidence": {
+        "level": "high",
+        "rationale": "Direct source review and a local mocked-delivery harness confirmed that the partial configuration accepts a missing token and reaches the delivery boundary."
+      },
+      "extensions": {
+        "candidateId": "PW-CONTACT-TURNSTILE-FAILOPEN-001"
+      },
+      "findingId": "csf_01ea5c2e6d7db208dee30851",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:1245bf8193368afa82b3c714f51ba17c3cf7227cee1be37d444bf1caec0f74d2"
+      },
+      "identity": {
+        "anchor": "contact-turnstile-partial-configuration"
+      },
+      "locations": [
+        {
+          "endLine": 27,
+          "path": "app/api/contact/route.ts",
+          "role": "root_control",
+          "startLine": 27
+        },
+        {
+          "endLine": 52,
+          "path": "app/api/contact/route.ts",
+          "role": "guard_and_sink",
+          "startLine": 46
+        }
+      ],
+      "occurrenceId": "occ_ca2c9db39e7c0bc37cb8ed12",
+      "preventiveControls": [
+        "Validate paired security configuration in CI and deployment documentation.",
+        "Use explicit verification timeouts and fail closed for configured Turnstile."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Require the public site key and private secret to be present or absent together, return a generic 503 for partial configuration, and fail closed on verification errors and timeouts.",
+      "remediationTests": [
+        "Public site key only returns 503 and never calls Siteverify or Resend.",
+        "Private secret only returns 503 and never calls Siteverify or Resend.",
+        "Both keys present require a valid mocked token; both absent follow the documented disabled policy."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "turnstile-fail-open",
+          "turnstile-delivery"
+        ],
+        "summary": "The client and server infer one security mode from two independent environment variables, and the server maps an absent secret directly to success instead of rejecting an inconsistent configuration."
+      },
+      "ruleId": "configuration.turnstile-partial-fail-open",
+      "severity": {
+        "changeConditions": "Severity would rise if the endpoint gained an attacker-selected recipient or privileged action, and would fall to informational if deployment validation proved partial Turnstile configuration impossible.",
+        "level": "low",
+        "rationale": "An unauthenticated Internet caller can bypass the advertised bot check only in a partial deployment configuration. The result is fixed-recipient spam and provider-quota use; no data disclosure, privilege gain, or arbitrary recipient is available.",
+        "score": 3.7,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "When the public Turnstile site key is present but the server secret is absent, the contact UI advertises a bot challenge while the API treats tokenless submissions as verified and can reach email delivery.",
+      "taxonomy": {
+        "category": "Fail-open security configuration",
+        "cwe": [
+          "CWE-636"
+        ]
+      },
+      "title": "Partial Turnstile configuration fails open in the contact API",
+      "validation": {
+        "checklist": [
+          "Confirmed the public anonymous entry point.",
+          "Exercised public-key-only, both-key, and both-absent configurations.",
+          "Confirmed no live provider or deployment was contacted."
+        ],
+        "evidenceRefs": [
+          "turnstile-fail-open",
+          "turnstile-delivery"
+        ],
+        "method": "Static source trace plus a local dependency-free control-flow probe with a mocked delivery sink.",
+        "remainingUncertainty": "The reviewed production environment had Turnstile disabled; future dashboard changes can create the vulnerable partial state."
+      },
+      "writeup": {
+        "reportPath": "findings/turnstile-partial-configuration-fails-open/turnstile-partial-configuration-fails-open.md"
+      }
+    },
+    {
+      "attackPath": {
+        "dataflow": "Anonymous request -> instance-local Map lookup -> fresh per-instance allowance -> schema and optional verification -> authenticated Resend request",
+        "evidenceRefs": [
+          "rate-limit-map",
+          "rate-limit-delivery"
+        ],
+        "reachability": "A remote caller benefits from concurrency, scaling, regional routing, or routine instance replacement. The attacker does not need to spoof Vercel-normalized forwarding headers."
+      },
+      "codeEvidence": [
+        {
+          "code": "const rateLimit = new Map<string, number[]>();\nfunction isRateLimited(ip: string) {\n  const recent = (rateLimit.get(ip) ?? []).filter(...);\n  if (recent.length >= 5) return true;\n  rateLimit.set(ip, [...recent, now]);\n}",
+          "endLine": 22,
+          "explanation": "Every JavaScript instance owns a separate Map, so the security budget is neither global nor durable.",
+          "id": "rate-limit-map",
+          "label": "Quota state is process-local",
+          "language": "typescript",
+          "path": "app/api/contact/route.ts",
+          "role": "root_control",
+          "startLine": 15
+        },
+        {
+          "code": "if (isRateLimited(ip)) return NextResponse.json(...);\n...\nconst response = await fetch(\"https://api.resend.com/emails\", {",
+          "endLine": 52,
+          "explanation": "A fresh instance's allow decision permits another authenticated provider call for the same IP.",
+          "id": "rate-limit-delivery",
+          "label": "Local decision gates email delivery",
+          "language": "typescript",
+          "path": "app/api/contact/route.ts",
+          "role": "sink",
+          "startLine": 38
+        }
+      ],
+      "confidence": {
+        "level": "high",
+        "rationale": "The state lifetime follows directly from the module-scoped Map, and a deterministic local model reproduced independent budgets and cold-start reset behavior."
+      },
+      "extensions": {
+        "candidateId": "PW-CONTACT-RATELIMIT-SCOPE-001"
+      },
+      "findingId": "csf_58b9e306475dbc4e960d52b6",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:c729a174b373ae34327f644ec4df7e59bb46804c95ec4077d4677e7513d86b17"
+      },
+      "identity": {
+        "anchor": "contact-instance-local-rate-limit"
+      },
+      "locations": [
+        {
+          "endLine": 22,
+          "path": "app/api/contact/route.ts",
+          "role": "root_control",
+          "startLine": 15
+        },
+        {
+          "endLine": 52,
+          "path": "app/api/contact/route.ts",
+          "role": "entrypoint_and_sink",
+          "startLine": 38
+        }
+      ],
+      "occurrenceId": "occ_910bf39b7080265a51046b13",
+      "preventiveControls": [
+        "Document the platform-edge rate-limit rule as required production infrastructure.",
+        "Alert on contact 429 rates and email-provider quota anomalies."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Enforce the authoritative POST /api/contact budget in Vercel Firewall or an atomic durable rate-limit service; retain the bounded in-memory limiter only as a secondary burst guard.",
+      "remediationTests": [
+        "Split six same-IP requests across two fresh limiter instances and require request six to fail.",
+        "Restart application state between request five and six and require request six to fail at the authoritative edge/store.",
+        "Verify atomic behavior under concurrent fifth-boundary submissions."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "rate-limit-map",
+          "rate-limit-delivery"
+        ],
+        "summary": "A global security invariant is assigned to ephemeral per-process memory in a horizontally scaled serverless runtime."
+      },
+      "ruleId": "rate-limit.instance-local-state",
+      "severity": {
+        "changeConditions": "Severity would rise if the downstream operation became higher-value or attacker-directed, and would fall if a verified platform-edge rule enforced one atomic global budget.",
+        "level": "low",
+        "rationale": "An unauthenticated caller can exceed the intended email-abuse budget as serverless instances scale or recycle, but the effect is bounded to fixed-recipient nuisance mail and provider quota.",
+        "score": 3.7,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "The five-per-hour contact budget is stored in a module-level Map, so each scaled or replacement serverless instance creates an independent budget for the same client IP.",
+      "taxonomy": {
+        "category": "Improper rate-limit scope",
+        "cwe": [
+          "CWE-799"
+        ]
+      },
+      "title": "Instance-local contact rate limit can be bypassed across function instances",
+      "validation": {
+        "checklist": [
+          "Confirmed the Map is module-scoped.",
+          "Confirmed one instance blocks request six.",
+          "Confirmed three independent instances allow fifteen requests and replacement state allows request six."
+        ],
+        "evidenceRefs": [
+          "rate-limit-map",
+          "rate-limit-delivery"
+        ],
+        "method": "Static source and deployment-lifecycle analysis plus a deterministic local multi-Map model.",
+        "remainingUncertainty": "No live production scaling or paid-provider traffic was exercised; exact instance routing frequency is platform-dependent."
+      },
+      "writeup": {
+        "reportPath": "findings/instance-local-rate-limit-bypass/instance-local-rate-limit-bypass.md"
+      }
+    },
+    {
+      "attackPath": {
+        "dataflow": "Hostile web page -> cross-origin text/plain POST -> request.json -> schema and optional Turnstile -> authenticated Resend request",
+        "evidenceRefs": [
+          "origin-unchecked-parse",
+          "origin-delivery"
+        ],
+        "reachability": "A remote website can trigger the side effect from visitor browsers without a preflight when Turnstile is disabled or otherwise bypassed. Response contents remain unreadable to the hostile origin."
+      },
+      "codeEvidence": [
+        {
+          "code": "export async function POST(request: NextRequest) {\n  ...\n  try { payload = await request.json(); } catch { ... }\n}",
+          "endLine": 43,
+          "explanation": "request.json parses valid JSON bytes even when a hostile browser declares the safelisted text/plain media type and supplies a foreign Origin.",
+          "id": "origin-unchecked-parse",
+          "label": "Request is parsed without origin or media-type checks",
+          "language": "typescript",
+          "path": "app/api/contact/route.ts",
+          "role": "root_control",
+          "startLine": 38
+        },
+        {
+          "code": "if (!(await verifyTurnstile(...))) return ...;\n...\nconst response = await fetch(\"https://api.resend.com/emails\", {",
+          "endLine": 52,
+          "explanation": "The server turns the accepted cross-origin body into an authenticated provider request; browser response-read restrictions occur too late to prevent the side effect.",
+          "id": "origin-delivery",
+          "label": "Parsed data reaches Resend",
+          "language": "typescript",
+          "path": "app/api/contact/route.ts",
+          "role": "sink",
+          "startLine": 46
+        }
+      ],
+      "confidence": {
+        "level": "high",
+        "rationale": "A hostile-Origin text/plain request against the local vulnerable server reached the delivery-configuration branch, proving that parsing, validation, and optional verification completed."
+      },
+      "extensions": {
+        "candidateId": "PW-CONTACT-CROSSORIGIN-001"
+      },
+      "findingId": "csf_7cb0e20f1567ff16a4200816",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:53827ba0b8f4ba15f06fadc68182294df504156f62482ff4383062019ced8d2d"
+      },
+      "identity": {
+        "anchor": "contact-cross-origin-text-plain"
+      },
+      "locations": [
+        {
+          "endLine": 43,
+          "path": "app/api/contact/route.ts",
+          "role": "entrypoint_and_root_control",
+          "startLine": 38
+        },
+        {
+          "endLine": 52,
+          "path": "app/api/contact/route.ts",
+          "role": "sink",
+          "startLine": 46
+        }
+      ],
+      "occurrenceId": "occ_547f74675cb89ec36a5f8a52",
+      "preventiveControls": [
+        "Apply a restrictive CSP and frame-ancestors policy to the site.",
+        "Review every future state-changing route for explicit request-authority checks."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Before rate limiting or parsing, require application/json, reject a foreign Origin and Sec-Fetch-Site: cross-site, and return generic no-store errors without invoking Turnstile or Resend.",
+      "remediationTests": [
+        "Reject hostile-Origin text/plain before parsing.",
+        "Reject hostile-Origin application/json before parsing.",
+        "Accept same-origin application/json and ensure rejection paths never call Siteverify or Resend."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "origin-unchecked-parse",
+          "origin-delivery"
+        ],
+        "summary": "The route treats syntactically valid JSON as sufficient request authority and relies implicitly on browser CORS response policy instead of enforcing media type and trusted origin before parsing."
+      },
+      "ruleId": "origin-validation.contact-submission",
+      "severity": {
+        "changeConditions": "Severity would rise if the route acquired a privileged user session or attacker-selected recipient, and would fall if strict media-type and trusted-origin gates ran before parsing.",
+        "level": "low",
+        "rationale": "Any website can recruit visitor browsers to trigger the fixed-recipient contact action when Turnstile is disabled or bypassed, but the attacker cannot read the response, choose the recipient, or gain privilege.",
+        "score": 3.7,
+        "scoringSystem": "CVSS:3.1"
+      },
+      "summary": "The contact handler parses JSON without validating Origin or requiring application/json, allowing a hostile website to send a CORS-safelisted text/plain request that can reach email delivery without a preflight.",
+      "taxonomy": {
+        "category": "Origin validation error",
+        "cwe": [
+          "CWE-346"
+        ]
+      },
+      "title": "Cross-origin text/plain requests can submit the contact form",
+      "validation": {
+        "checklist": [
+          "Confirmed the route has no origin or media-type gate.",
+          "Reached the 503 delivery-configuration branch with external delivery deliberately disabled.",
+          "Verified the probe refuses non-loopback targets."
+        ],
+        "evidenceRefs": [
+          "origin-unchecked-parse",
+          "origin-delivery"
+        ],
+        "method": "Static source trace plus a local interface probe using a hostile Origin and CORS-safelisted text/plain JSON.",
+        "remainingUncertainty": "The exact behavior of every browser was not tested; the server-side acceptance was reproduced and follows the Fetch simple-request model."
+      },
+      "writeup": {
+        "reportPath": "findings/cross-origin-contact-submission/cross-origin-contact-submission.md"
+      }
+    }
+  ],
+  "scanId": "f665a003-aace-4658-ac46-8ce82a31b450",
+  "schemaVersion": "1.0"
+}

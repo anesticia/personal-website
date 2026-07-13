@@ -1,0 +1,7 @@
+flowchart LR
+  A["Anonymous browser or script"] --> G["Route admission gate"]
+  G --> D["Atomic durable limiter"]
+  D --> T["Cloudflare Siteverify with timeout"]
+  D --> R["Resend fixed-recipient delivery with timeout"]
+  P["Paired server/client configuration"] --> G
+

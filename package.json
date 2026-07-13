@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "assets:optimize": "node scripts/optimize-images.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && npm run lint && npm run build"
+    "security:test": "vitest run",
+    "ui:test": "playwright test",
+    "test": "npm run security:test && npm run typecheck && npm run lint && npm run build && npm run ui:test"
   },
   "dependencies": {
     "next": "16.2.10",
@@ -17,12 +20,15 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.2.10",
-    "typescript": "6.0.3"
+    "sharp": "^0.34.5",
+    "typescript": "6.0.3",
+    "vitest": "^3.2.7"
   },
   "overrides": {
     "postcss": "8.5.10"

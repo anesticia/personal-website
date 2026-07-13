@@ -1,0 +1,7 @@
+flowchart LR
+  A["Anonymous browser or script"] --> F["Serverless contact function"]
+  F --> M["Instance-local Map"]
+  F --> T["Cloudflare Siteverify (optional)"]
+  F --> R["Resend fixed-recipient delivery"]
+  C["Client build site key"] -. independent config .-> F
+

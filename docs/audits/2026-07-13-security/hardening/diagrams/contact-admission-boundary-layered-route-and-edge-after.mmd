@@ -1,0 +1,8 @@
+flowchart LR
+  A["Anonymous browser or script"] --> W["Vercel Firewall: shared quota"]
+  W --> G["Route admission gate"]
+  G --> B["Bounded local burst guard"]
+  G --> T["Cloudflare Siteverify with timeout"]
+  G --> R["Resend fixed-recipient delivery with timeout"]
+  P["Paired server/client configuration"] --> G
+

@@ -1,0 +1,292 @@
+{
+  "documentType": "codex-security.hardening-analysis",
+  "schemaVersion": "1.0",
+  "analysisId": "hardening_final",
+  "sourceScan": {
+    "scanId": "f665a003-aace-4658-ac46-8ce82a31b450",
+    "targetRevision": "e9825804099c6d277643719c61328b4c335d1114",
+    "sourceDrift": "none"
+  },
+  "assessment": {
+    "outcome": "opportunities_identified",
+    "summary": "The three surviving contact findings share one admission-control boundary; centralizing cheap route checks and pairing them with a deployment-edge global quota is proportionate to this static portfolio."
+  },
+  "constraints": {
+    "profile": "balanced",
+    "changeHorizons": [
+      "incremental",
+      "medium_term"
+    ],
+    "nonNegotiables": [
+      "Preserve the rendered design, animation timing, transitions, and valid contact-form behavior.",
+      "Avoid adding a new paid or stateful service without explicit approval."
+    ],
+    "assumptions": [
+      "No measured provider-latency or production traffic budget was supplied.",
+      "Vercel remains the production host."
+    ]
+  },
+  "opportunities": [
+    {
+      "opportunityId": "contact-admission-boundary",
+      "title": "Own contact admission at one boundary",
+      "summary": "Consolidate request authority, configuration validity, resource bounds, and provider deadlines before email delivery, with the global quota enforced at the deployment edge.",
+      "diagnosis": "The route currently mixes browser authority, optional-control configuration, process-local state, parsing, and provider delivery. Two findings arise from missing local admission checks; the third arises because a global quota is assigned to instance-local memory.",
+      "evidence": [
+        {
+          "claimType": "observed",
+          "sourceKind": "finding",
+          "findingId": "csf_01ea5c2e6d7db208dee30851",
+          "path": "app/api/contact/route.ts",
+          "claim": "A missing Turnstile secret is treated as successful verification even when the client can advertise Turnstile."
+        },
+        {
+          "claimType": "observed",
+          "sourceKind": "finding",
+          "findingId": "csf_58b9e306475dbc4e960d52b6",
+          "path": "app/api/contact/route.ts",
+          "claim": "The five-per-hour budget is stored in a module-local Map and is not shared across serverless instances."
+        },
+        {
+          "claimType": "observed",
+          "sourceKind": "finding",
+          "findingId": "csf_7cb0e20f1567ff16a4200816",
+          "path": "app/api/contact/route.ts",
+          "claim": "The route parses hostile-origin text/plain JSON without a request-authority gate."
+        },
+        {
+          "claimType": "inferred",
+          "sourceKind": "source",
+          "path": "app/api/contact/route.ts",
+          "claim": "A single cheap admission phase before parsing and upstream I/O can own the local invariants, while only an edge or durable service can own a global quota."
+        }
+      ],
+      "desiredInvariants": [
+        "Every browser contact submission is same-origin application/json before its body is parsed.",
+        "Turnstile is either deliberately disabled or fully paired; partial configuration and provider failure never authorize delivery.",
+        "Every request has a bounded body, bounded local state cost, and bounded upstream wait.",
+        "Production enforces one authoritative per-client contact budget across all function instances."
+      ],
+      "proposalPath": "proposals/contact-admission-boundary.md",
+      "options": [
+        {
+          "optionId": "layered-route-and-edge",
+          "title": "Layered route admission plus Vercel Firewall",
+          "kind": "incremental",
+          "summary": "Add one route-owned admission pipeline and bounded local burst guard, then make a path-specific platform-edge rule the authoritative shared rate limit.",
+          "diagramPaths": {
+            "before": "diagrams/contact-admission-boundary-before.mmd",
+            "after": "diagrams/contact-admission-boundary-layered-route-and-edge-after.mmd"
+          },
+          "findingCoverage": [
+            {
+              "findingId": "csf_01ea5c2e6d7db208dee30851",
+              "effect": "addresses",
+              "tacticalFixRequired": true,
+              "rationale": "Paired configuration and fail-closed verification directly repair the route."
+            },
+            {
+              "findingId": "csf_7cb0e20f1567ff16a4200816",
+              "effect": "addresses",
+              "tacticalFixRequired": true,
+              "rationale": "Same-origin and JSON gates directly repair the route."
+            },
+            {
+              "findingId": "csf_58b9e306475dbc4e960d52b6",
+              "effect": "addresses",
+              "tacticalFixRequired": true,
+              "rationale": "The platform rule is authoritative; the bounded Map remains only a secondary burst guard."
+            }
+          ],
+          "tradeoffs": [
+            {
+              "dimension": "security",
+              "direction": "improves",
+              "confidence": "high",
+              "basis": "source-derived",
+              "assessment": "One owned route admission gate closes the configuration and origin failures; an edge rule supplies the missing shared quota boundary.",
+              "validationPlan": "Run route regression tests, re-run all three local PoCs, and verify the production firewall rule and response headers."
+            },
+            {
+              "dimension": "performance",
+              "direction": "improves",
+              "confidence": "medium",
+              "basis": "source-derived",
+              "assessment": "Cheap media-type, origin, and byte-length checks reject abusive requests before JSON parsing or upstream I/O; the edge rule can reject before function execution.",
+              "validationPlan": "Compare local Lighthouse and contact rejection latency before and after, and inspect Vercel function invocations after rollout."
+            },
+            {
+              "dimension": "memory",
+              "direction": "improves",
+              "confidence": "medium",
+              "basis": "source-derived",
+              "assessment": "A capped, swept burst-guard Map prevents unbounded process-local key retention; no new application cache is introduced.",
+              "validationPlan": "Unit-test the limiter cap and observe heap behavior under a synthetic high-cardinality local workload."
+            },
+            {
+              "dimension": "reliability",
+              "direction": "improves",
+              "confidence": "high",
+              "basis": "source-derived",
+              "assessment": "Provider timeouts and fail-closed configuration make failure bounded and predictable while same-origin valid submissions retain the existing path.",
+              "validationPlan": "Mock Cloudflare and Resend timeouts, errors, and success responses and verify deterministic status codes."
+            },
+            {
+              "dimension": "operability",
+              "direction": "improves",
+              "confidence": "medium",
+              "basis": "source-derived",
+              "assessment": "The code remains self-contained, but production correctness depends on a documented Vercel Firewall rule and environment-pair validation.",
+              "validationPlan": "Add the rule and environment checklist to deployment runbooks and verify them after every production deployment."
+            },
+            {
+              "dimension": "migration",
+              "direction": "neutral",
+              "confidence": "high",
+              "basis": "source-derived",
+              "assessment": "The public UI and valid same-origin JSON contract are unchanged; only abusive and misconfigured paths change.",
+              "validationPlan": "Run the existing contact UI through the browser and verify no DOM, animation, or request-shape regression."
+            }
+          ],
+          "residualRisks": [
+            "The global quota remains unverified until the production Vercel Firewall rule is inspected and enabled.",
+            "The CSP retains unsafe-inline for framework bootstrap and existing inline styles to preserve static rendering and visual behavior."
+          ],
+          "implementationReadiness": {
+            "affectedComponents": [
+              "app/api/contact/route.ts",
+              "components/contact-form.tsx",
+              "next.config.ts",
+              "docs/DEPLOYMENT.md"
+            ],
+            "workPackages": [
+              "Centralize pre-parse admission checks and response policy.",
+              "Bound local state and all upstream waits.",
+              "Add regression tests and document the required edge rule."
+            ],
+            "acceptanceCriteria": [
+              "All local finding PoCs are rejected or model the repaired invariant.",
+              "Valid same-origin submissions preserve their current UI contract.",
+              "Production headers and the edge rate-limit rule are verified."
+            ],
+            "migrationNotes": [
+              "No response-shape or visible UI change is intended."
+            ],
+            "rollback": "Revert the focused route/config commit and disable the edge rule if legitimate contact traffic is blocked."
+          }
+        },
+        {
+          "optionId": "durable-application-limiter",
+          "title": "Atomic durable application limiter",
+          "kind": "structural",
+          "summary": "Keep the route admission gate but replace process-local quota authority with an atomic managed rate-limit store called by the function.",
+          "diagramPaths": {
+            "before": "diagrams/contact-admission-boundary-before.mmd",
+            "after": "diagrams/contact-admission-boundary-durable-application-limiter-after.mmd"
+          },
+          "findingCoverage": [
+            {
+              "findingId": "csf_01ea5c2e6d7db208dee30851",
+              "effect": "addresses",
+              "tacticalFixRequired": true,
+              "rationale": "The local paired-configuration patch remains required."
+            },
+            {
+              "findingId": "csf_7cb0e20f1567ff16a4200816",
+              "effect": "addresses",
+              "tacticalFixRequired": true,
+              "rationale": "The local request-authority patch remains required."
+            },
+            {
+              "findingId": "csf_58b9e306475dbc4e960d52b6",
+              "effect": "addresses",
+              "tacticalFixRequired": true,
+              "rationale": "An atomic shared store becomes the authoritative global budget."
+            }
+          ],
+          "tradeoffs": [
+            {
+              "dimension": "security",
+              "direction": "improves",
+              "confidence": "high",
+              "basis": "source-derived",
+              "assessment": "An atomic durable limiter makes the global quota explicit in application code while the same local admission gate closes origin and configuration failures.",
+              "validationPlan": "Exercise multi-instance concurrency against a disposable durable store and re-run all local finding PoCs."
+            },
+            {
+              "dimension": "performance",
+              "direction": "regresses",
+              "confidence": "medium",
+              "basis": "hypothetical",
+              "assessment": "Every accepted candidate request gains a network round trip to the limiter unless a platform-local service is selected.",
+              "validationPlan": "Measure p50 and p95 contact submission latency and set a rollback threshold before production."
+            },
+            {
+              "dimension": "memory",
+              "direction": "neutral",
+              "confidence": "medium",
+              "basis": "source-derived",
+              "assessment": "Application memory remains bounded; state moves to a managed external service.",
+              "validationPlan": "Inspect local heap and provider key cardinality/TTL behavior under synthetic traffic."
+            },
+            {
+              "dimension": "reliability",
+              "direction": "unknown",
+              "confidence": "medium",
+              "basis": "hypothetical",
+              "assessment": "Atomic shared state improves quota correctness but adds a provider dependency and requires an explicit fail-closed or degraded-mode decision.",
+              "validationPlan": "Fault-inject limiter timeouts and verify the selected failure policy."
+            },
+            {
+              "dimension": "operability",
+              "direction": "regresses",
+              "confidence": "high",
+              "basis": "source-derived",
+              "assessment": "A new credential, service, retention policy, monitoring surface, and possible billable dependency must be operated.",
+              "validationPlan": "Complete credential rotation, alerting, quota, and incident-response checks before enabling."
+            },
+            {
+              "dimension": "migration",
+              "direction": "regresses",
+              "confidence": "high",
+              "basis": "source-derived",
+              "assessment": "The route, tests, deployment variables, and infrastructure configuration all change.",
+              "validationPlan": "Canary the limiter behind a feature flag and retain the edge rule for rollback."
+            }
+          ],
+          "residualRisks": [
+            "Limiter availability becomes part of contact availability.",
+            "Credential and provider misconfiguration create a new operational failure mode."
+          ],
+          "implementationReadiness": {
+            "affectedComponents": [
+              "app/api/contact/route.ts",
+              "lib/contact-rate-limit.ts",
+              "deployment environment"
+            ],
+            "workPackages": [
+              "Select and provision an atomic store.",
+              "Integrate behind a narrow limiter interface.",
+              "Canary with edge fallback and fault-injection tests."
+            ],
+            "acceptanceCriteria": [
+              "Concurrent cross-instance request six is rejected atomically.",
+              "Limiter failure follows an explicit tested policy."
+            ],
+            "migrationNotes": [
+              "Requires a new external service and secrets."
+            ],
+            "rollback": "Disable the durable limiter feature flag and retain the platform-edge rule."
+          }
+        }
+      ],
+      "recommendedOptionId": "layered-route-and-edge",
+      "recommendation": "Use layered route admission plus the Vercel Firewall under the current static-site, low-traffic, no-new-service constraints. Move to a durable store only if product requirements demand application-owned quotas or richer identity-based policy."
+    }
+  ],
+  "openQuestions": [
+    "Which production Vercel Firewall rule and threshold are currently active for POST /api/contact?",
+    "Should a future custom domain become the only accepted Origin, or should the canonical vercel.app alias remain valid?"
+  ]
+}
+

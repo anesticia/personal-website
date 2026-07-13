@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local cross-origin contact probe</title>
+  </head>
+  <body>
+    <h1>Local cross-origin contact probe</h1>
+    <p>
+      Start the portfolio on <code>127.0.0.1:3000</code>, serve this directory
+      on another local port, open DevTools Network, and press the button.
+    </p>
+    <button id="probe" type="button">Send local probe</button>
+    <pre id="result">Not sent.</pre>
+    <script>
+      const target = "http://127.0.0.1:3000/api/contact";
+      const output = document.querySelector("#result");
+
+      document.querySelector("#probe").addEventListener("click", async () => {
+        output.textContent = `Sending a text/plain POST to ${target} ...`;
+
+        try {
+          const response = await fetch(target, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=UTF-8" },
+            body: JSON.stringify({
+              name: "Local Security Probe",
+              email: "probe@example.test",
+              purpose: "other",
+              message: "Local-only cross-origin validation message; do not deliver.",
+              website: ""
+            })
+          });
+          output.textContent = `Request completed with status ${response.status}.`;
+        } catch (error) {
+          output.textContent =
+            "The browser sent the request but blocked this page from reading " +
+            "the response. Confirm the POST (and absence of OPTIONS) in Network.\n" +
+            String(error);
+        }
+      });
+    </script>
+  </body>
+</html>

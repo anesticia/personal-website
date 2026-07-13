@@ -1,0 +1,223 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "f665a003-aace-4658-ac46-8ce82a31b450"
+      },
+      "properties": {
+        "codexSecuritySchemaVersion": "1.0",
+        "codexSecurityTargetKind": "git_revision"
+      },
+      "results": [
+        {
+          "level": "note",
+          "locations": [
+            {
+              "message": {
+                "text": "entrypoint_and_root_control"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/api/contact/route.ts"
+                },
+                "region": {
+                  "endLine": 43,
+                  "startLine": 38
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "The contact handler parses JSON without validating Origin or requiring application/json, allowing a hostile website to send a CORS-safelisted text/plain request that can reach email delivery without a preflight."
+          },
+          "partialFingerprints": {
+            "codexSecurity/v1": "codex-security/v1:sha256:53827ba0b8f4ba15f06fadc68182294df504156f62482ff4383062019ced8d2d"
+          },
+          "properties": {
+            "candidateId": "PW-CONTACT-CROSSORIGIN-001",
+            "category": "Origin validation error",
+            "confidence": "high",
+            "findingId": "csf_7cb0e20f1567ff16a4200816",
+            "occurrenceId": "occ_547f74675cb89ec36a5f8a52",
+            "severity": "low"
+          },
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "sink"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/api/contact/route.ts"
+                },
+                "region": {
+                  "endLine": 52,
+                  "startLine": 46
+                }
+              }
+            }
+          ],
+          "ruleId": "origin-validation.contact-submission",
+          "ruleIndex": 1
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "message": {
+                "text": "root_control"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/api/contact/route.ts"
+                },
+                "region": {
+                  "endLine": 22,
+                  "startLine": 15
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "The five-per-hour contact budget is stored in a module-level Map, so each scaled or replacement serverless instance creates an independent budget for the same client IP."
+          },
+          "partialFingerprints": {
+            "codexSecurity/v1": "codex-security/v1:sha256:c729a174b373ae34327f644ec4df7e59bb46804c95ec4077d4677e7513d86b17"
+          },
+          "properties": {
+            "candidateId": "PW-CONTACT-RATELIMIT-SCOPE-001",
+            "category": "Improper rate-limit scope",
+            "confidence": "high",
+            "findingId": "csf_58b9e306475dbc4e960d52b6",
+            "occurrenceId": "occ_910bf39b7080265a51046b13",
+            "severity": "low"
+          },
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "entrypoint_and_sink"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/api/contact/route.ts"
+                },
+                "region": {
+                  "endLine": 52,
+                  "startLine": 38
+                }
+              }
+            }
+          ],
+          "ruleId": "rate-limit.instance-local-state",
+          "ruleIndex": 2
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "message": {
+                "text": "root_control"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/api/contact/route.ts"
+                },
+                "region": {
+                  "endLine": 27,
+                  "startLine": 27
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "When the public Turnstile site key is present but the server secret is absent, the contact UI advertises a bot challenge while the API treats tokenless submissions as verified and can reach email delivery."
+          },
+          "partialFingerprints": {
+            "codexSecurity/v1": "codex-security/v1:sha256:1245bf8193368afa82b3c714f51ba17c3cf7227cee1be37d444bf1caec0f74d2"
+          },
+          "properties": {
+            "candidateId": "PW-CONTACT-TURNSTILE-FAILOPEN-001",
+            "category": "Fail-open security configuration",
+            "confidence": "high",
+            "findingId": "csf_01ea5c2e6d7db208dee30851",
+            "occurrenceId": "occ_ca2c9db39e7c0bc37cb8ed12",
+            "severity": "low"
+          },
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": {
+                "text": "guard_and_sink"
+              },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/api/contact/route.ts"
+                },
+                "region": {
+                  "endLine": 52,
+                  "startLine": 46
+                }
+              }
+            }
+          ],
+          "ruleId": "configuration.turnstile-partial-fail-open",
+          "ruleIndex": 0
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "Codex Security",
+          "rules": [
+            {
+              "id": "configuration.turnstile-partial-fail-open",
+              "name": "configuration.turnstile-partial-fail-open",
+              "properties": {
+                "tags": [
+                  "security"
+                ]
+              },
+              "shortDescription": {
+                "text": "configuration.turnstile-partial-fail-open"
+              }
+            },
+            {
+              "id": "origin-validation.contact-submission",
+              "name": "origin-validation.contact-submission",
+              "properties": {
+                "tags": [
+                  "security"
+                ]
+              },
+              "shortDescription": {
+                "text": "origin-validation.contact-submission"
+              }
+            },
+            {
+              "id": "rate-limit.instance-local-state",
+              "name": "rate-limit.instance-local-state",
+              "properties": {
+                "tags": [
+                  "security"
+                ]
+              },
+              "shortDescription": {
+                "text": "rate-limit.instance-local-state"
+              }
+            }
+          ],
+          "version": "0.1.11"
+        }
+      },
+      "versionControlProvenance": [
+        {
+          "repositoryUri": "https://github.com/anesticia/personal-website",
+          "revisionId": "e9825804099c6d277643719c61328b4c335d1114"
+        }
+      ]
+    }
+  ],
+  "version": "2.1.0"
+}

@@ -42,6 +42,7 @@ A restrained digital research notebook shaped by real simulation output: warm pa
 3. Typed content archive and detail routes.
 4. Contact, metadata, accessibility, and responsive behavior.
 5. Automated verification, visual QA, and deployment.
+6. Performance optimization and security hardening with a strict no-visual-change invariant.
 
 ## Acceptance criteria
 
@@ -52,4 +53,7 @@ A restrained digital research notebook shaped by real simulation output: warm pa
 - Production build, type checking, and linting pass.
 - Sitemap, RSS, metadata, JSON-LD, canonical identifiers, and 404 behavior exist.
 - Contact input is bounded, validated, honeypot-protected, rate-limited, and optionally Turnstile-protected.
+- The global contact budget is enforced at the deployment edge, not only in function memory.
+- Static imagery is content-versioned and format conversion proves decoded-pixel equality.
+- Settled desktop/mobile geometry, animation timing, transitions, and CLS remain unchanged after optimization.
 - No credential, student ID, raw local path, or unpublished source is shipped.

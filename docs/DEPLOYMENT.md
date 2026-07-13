@@ -34,6 +34,26 @@ Configure these for Production and Preview:
 
 Never commit real values.
 
+The Turnstile values are a pair: configure both or neither. Exactly one value is a deployment error and the contact API will return `503` without delivery.
+
+## Required firewall rule
+
+The production edge must retain this live rule:
+
+- Name: `Contact submissions per IP`
+- ID: `rule_contact_submissions_per_ip_uwUNIk`
+- Match: path equals `/api/contact` AND method equals `POST`
+- Action: fixed-window rate limit, 5 requests per 3,600 seconds, keyed by IP
+
+Verify after deployment:
+
+```powershell
+npx vercel firewall rules inspect rule_contact_submissions_per_ip_uwUNIk --no-color
+npx vercel firewall diff --no-color
+```
+
+Do not replace this with the process-local Map. If the project leaves Vercel, provision an atomic durable limiter before moving traffic.
+
 ## Domain checklist
 
 1. Add the chosen domain in Vercel.
@@ -45,11 +65,13 @@ Never commit real values.
 ## Release checklist
 
 - Run `npm test`.
+- Confirm the firewall rule is live and there are no unpublished draft changes.
 - Review all changed work records and provenance notes.
 - Check the preview on mobile and desktop.
 - Submit a real contact test after mail variables are configured.
 - Verify `/sitemap.xml`, `/robots.txt`, `/feed.xml`, and the social preview.
 - Promote the reviewed deployment to production.
+- Read back CSP, HSTS, no-store API, and immutable image headers from the canonical origin.
 
 ## Recovery and portability
 

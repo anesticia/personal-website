@@ -1,0 +1,56 @@
+{
+  "format": "lossless-webp",
+  "generatedBy": "scripts/optimize-images.mjs",
+  "images": {
+    "/images/gray-scott.png": {
+      "output": "/images/gray-scott.5f1235deedb5.webp",
+      "width": 1120,
+      "height": 1119,
+      "channels": 4,
+      "sourceBytes": 774983,
+      "rawBytes": 5013120,
+      "encodedBytes": 279188,
+      "rawPixelSha256": "46f1ce5dc2c78afb113caac952842efd1eeaed12f417c1a048ff603e4c2d2464"
+    },
+    "/images/numerical-methods.png": {
+      "output": "/images/numerical-methods.26abe82439e0.webp",
+      "width": 1879,
+      "height": 1269,
+      "channels": 4,
+      "sourceBytes": 4251152,
+      "rawBytes": 9537804,
+      "encodedBytes": 3051696,
+      "rawPixelSha256": "afb85f1938a122a9fe4bf29cb2baef5cb7ef02e7ced643db3e2b988b49771da3"
+    },
+    "/images/orbit-pinn.png": {
+      "output": "/images/orbit-pinn.829609fe7a3c.webp",
+      "width": 6000,
+      "height": 3375,
+      "channels": 4,
+      "sourceBytes": 693466,
+      "rawBytes": 81000000,
+      "encodedBytes": 280084,
+      "rawPixelSha256": "fd0f295185cf275ced9ec2ce6482628287368f74950295b51d45b78758b709fa"
+    },
+    "/images/reaction-diffusion.png": {
+      "output": "/images/reaction-diffusion.bf11faa839ec.webp",
+      "width": 1344,
+      "height": 1344,
+      "channels": 4,
+      "sourceBytes": 2618436,
+      "rawBytes": 7225344,
+      "encodedBytes": 1672102,
+      "rawPixelSha256": "4e3fd11f173e60ecf62647c523f0a6953ed24db561b3b317674ea6b36fd8c49e"
+    },
+    "/images/wave-pinn.png": {
+      "output": "/images/wave-pinn.688595129c57.webp",
+      "width": 1614,
+      "height": 3046,
+      "channels": 4,
+      "sourceBytes": 1372494,
+      "rawBytes": 19664976,
+      "encodedBytes": 966948,
+      "rawPixelSha256": "2fe33d436c5b6fa0fab097a0e461e0b4778c4048d315be84ad35f3b7bf01594d"
+    }
+  }
+}
