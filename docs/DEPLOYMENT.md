@@ -1,5 +1,13 @@
 # Deployment and operations
 
+## Current production
+
+- Canonical URL: `https://andre-huizen.vercel.app`
+- Vercel project: `anesticias-projects/personal-website`
+- Git repository: `https://github.com/anesticia/personal-website`
+- Production is connected to the GitHub repository.
+- First production deployment: 2026-07-13
+
 ## Vercel deployment
 
 The project is intended for Vercel. From the repository root:

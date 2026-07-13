@@ -2,6 +2,10 @@
 
 Research-first personal website for Laurentius Andre Cornelis Rudolf Huizen (Andre Huizen). It presents scientific machine learning research, publications, software experiments, and an explicitly attributed archive of public forks.
 
+**Production:** [andre-huizen.vercel.app](https://andre-huizen.vercel.app)
+
+**Source:** [github.com/anesticia/personal-website](https://github.com/anesticia/personal-website)
+
 ## Quick start
 
 ```powershell
@@ -25,6 +29,7 @@ npm test
 - [Adding research or projects](docs/ADDING-CONTENT.md)
 - [Deployment and operations](docs/DEPLOYMENT.md)
 - [Design system](docs/DESIGN.md)
+- [Implementation and verification log](docs/IMPLEMENTATION-LOG.md)
 
 ## Contact configuration
 
