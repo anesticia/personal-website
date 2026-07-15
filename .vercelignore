@@ -1,0 +1,14 @@
+.git/
+.next/
+.vercel/
+.playwright-cli/
+.agents/
+.codex/
+node_modules/
+output/
+out/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+npm-debug.log*
