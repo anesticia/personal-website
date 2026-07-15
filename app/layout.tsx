@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Instrument_Serif, Manrope } from "next/font/google";
+import { IBM_Plex_Mono, Manrope, Source_Serif_4 } from "next/font/google";
 import { MotionController } from "@/components/motion-controller";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -7,7 +7,13 @@ import { site } from "@/data/site";
 import "./globals.css";
 
 const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const serif = Instrument_Serif({ subsets: ["latin"], variable: "--font-serif", weight: "400", display: "swap" });
+const serif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
 const mono = IBM_Plex_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500"], display: "swap" });
 
 export const metadata: Metadata = {

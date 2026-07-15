@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon, ExternalIcon } from "@/components/icons";
+import { ReactionDiffusionCanvas, ReactionDiffusionHero } from "@/components/reaction-diffusion-hero";
 import { Reveal } from "@/components/reveal";
 import { WorkRow } from "@/components/work-row";
 import { publication, site, works } from "@/data/site";
@@ -10,14 +10,14 @@ export default function Home() {
   return (
     <>
       <section className="hero">
-        <div className="hero-image" aria-hidden="true"><Image src="/images/reaction-diffusion.bf11faa839ec.webp" alt="" fill priority fetchPriority="high" decoding="sync" sizes="100vw" /><div className="hero-shade" /></div>
+        <div className="hero-image" aria-hidden="true"><ReactionDiffusionHero /><div className="hero-shade" /></div>
         <div className="hero-copy">
           <p className="hero-kicker">Andre Huizen · Informatics researcher</p>
           <h1>Learning the rules<br /><em>inside complex systems.</em></h1>
           <p className="hero-intro">I work across scientific machine learning, partial differential equations, numerical simulation, and the software that makes research reproducible.</p>
           <div className="hero-actions"><Link className="button button-light" href="/research">Explore research <ArrowIcon /></Link><Link className="text-link light" href="/archive">Open the archive <ArrowIcon /></Link></div>
         </div>
-        <div className="hero-caption"><span>01 / Reaction–diffusion</span><span>Pattern generated from a two-species PDE simulation</span></div>
+        <div className="hero-caption"><span>01 / Live reaction–diffusion</span><span>Move the pointer to perturb the two-species PDE field</span></div>
       </section>
 
       <section className="statement section-pad">
@@ -31,7 +31,7 @@ export default function Home() {
       </section>
 
       <section className="publication-feature">
-        <div className="publication-visual"><Image src="/images/gray-scott.5f1235deedb5.webp" alt="Bright spots emerging in a Gray–Scott reaction–diffusion field" fill sizes="(max-width: 900px) 100vw, 50vw" /></div>
+        <div className="publication-visual"><ReactionDiffusionCanvas variant="publication" /><span className="simulation-hint">Live Gray–Scott field · move to perturb</span></div>
         <Reveal className="publication-copy"><p className="section-number">03 — Publication</p><p className="publication-year">JSI · {publication.year}</p><h2>Edge information,<br />combined.</h2><p>{publication.title}</p><p className="publication-meta">{publication.venue}, {publication.volume}({publication.issue}), {publication.pages}</p><a className="button button-light" href={publication.url} target="_blank" rel="noreferrer">Read the paper <ExternalIcon /></a></Reveal>
       </section>
 
