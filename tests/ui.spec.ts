@@ -237,7 +237,8 @@ test("archive search and filters remain usable", async ({ page }) => {
 
   await search.fill("");
   await page.getByRole("button", { name: "Forks" }).click();
-  await expect(page.locator(".result-count")).toHaveText("2 entries");
+  await expect(page.locator(".result-count")).toHaveText("0 entries");
+  await expect(page.locator(".empty-state")).toBeVisible();
 
   await search.fill("no-such-project");
   await expect(page.locator(".empty-state")).toBeVisible();
