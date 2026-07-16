@@ -5,6 +5,9 @@ import { useEffect, useRef } from "react";
 const HERO_HISTORY_LENGTH = 84;
 const PUBLICATION_HISTORY_LENGTH = 280;
 const FRAME_INTERVAL = 1000 / 30;
+const POINTER_RADIUS_SCALE = 0.009;
+const POINTER_MINIMUM_RADIUS = 2;
+const POINTER_INJECTION_STRENGTH = 1;
 
 type PointerSeed = { x: number; y: number };
 type SimulationVariant = "hero" | "publication";
@@ -62,11 +65,10 @@ void main() {
     float field = smoothstep(0.02, 0.24, displayConcentration);
     float activity = smoothstep(0.025, 0.24, 1.0 - localU);
     float core = smoothstep(0.16, 0.37, displayConcentration);
-    vec3 color = vec3(
-      0.008 + field * 0.392 + activity * 0.047 + core * 0.549,
-      0.004 + field * 0.051 + activity * 0.027 + core * 0.494,
-      0.027 + field * 0.400 - core * 0.165
-    );
+    vec3 color = vec3(0.025, 0.035, 0.031)
+      + field * vec3(0.240, 0.120, 0.055)
+      + activity * vec3(0.020, 0.100, 0.090)
+      + core * vec3(0.530, 0.310, 0.120);
     outColor = vec4(clamp(color + grain, 0.0, 1.0), 1.0);
     return;
   }
@@ -195,14 +197,16 @@ function createCanvasRenderer(canvas: HTMLCanvasElement, context: CanvasRenderin
       }
       const data = pixels.data;
       for (let cell = 0; cell < width * height; cell += 1) {
+        const localU = state[cell * 2] / 255;
         const concentration = state[cell * 2 + 1] / 255;
         const field = smoothstep(0.02, 0.25, concentration);
         const offset = cell * 4;
         if (variant === "publication") {
+          const activity = smoothstep(0.025, 0.24, 1 - localU);
           const core = smoothstep(0.16, 0.37, concentration);
-          data[offset] = clamp(2 + field * 100 + core * 140, 0, 255);
-          data[offset + 1] = clamp(1 + field * 13 + core * 126, 0, 255);
-          data[offset + 2] = clamp(7 + field * 102 - core * 42, 0, 255);
+          data[offset] = clamp(6 + field * 61 + activity * 5 + core * 135, 0, 255);
+          data[offset + 1] = clamp(9 + field * 31 + activity * 26 + core * 79, 0, 255);
+          data[offset + 2] = clamp(8 + field * 14 + activity * 23 + core * 31, 0, 255);
         } else {
           const outline = smoothstep(0.035, 0.095, concentration) * (1 - smoothstep(0.17, 0.28, concentration));
           data[offset] = clamp(119 - outline * 83 - field * 8, 0, 255);
@@ -271,6 +275,7 @@ export function ReactionDiffusionCanvas({ variant = "hero" }: { variant?: Simula
     canvas.dataset.warmupSteps = String(warmupSteps);
     canvas.dataset.playbackStride = String(playbackStride);
     canvas.dataset.endHoldFrames = String(endHoldFrames);
+    canvas.dataset.interactionStrength = POINTER_INJECTION_STRENGTH.toFixed(2);
     canvas.dataset.interacting = "false";
 
     function setPlaybackState(phase: string, frame: number, playbackDirection: number) {
@@ -378,7 +383,7 @@ export function ReactionDiffusionCanvas({ variant = "hero" }: { variant?: Simula
           Math.round(seed.x * (width - 1)),
           Math.round(seed.y * (height - 1)),
           interactionRadius,
-          variant === "publication" ? 0.58 : 1,
+          POINTER_INJECTION_STRENGTH,
         );
       }
       pendingSeeds = [];
@@ -438,7 +443,7 @@ export function ReactionDiffusionCanvas({ variant = "hero" }: { variant?: Simula
       canvas!.dataset.quality = quality.toFixed(2);
       canvas!.dataset.backing = `${canvas!.width}x${canvas!.height}`;
       canvas!.dataset.simulationGrid = `${width}x${height}`;
-      interactionRadius = Math.max(variant === "hero" ? 2 : 4, Math.round(maximumDimension * (variant === "hero" ? 0.009 : 0.014)));
+      interactionRadius = Math.max(POINTER_MINIMUM_RADIUS, Math.round(maximumDimension * POINTER_RADIUS_SCALE));
       canvas!.dataset.interactionRadius = String(interactionRadius);
 
       baseField = createField(true);

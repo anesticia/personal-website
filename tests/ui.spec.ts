@@ -64,6 +64,66 @@ test("client navigation rebinds the shared reveal observer", async ({ page }) =>
   expect(await page.locator(".reveal:not(.is-visible)").count()).toBe(0);
 });
 
+test("wave propagation scrollbar tracks, jumps, and supports the keyboard", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const scrollbar = page.getByRole("scrollbar", { name: "Page position" });
+
+  await expect(scrollbar).toBeVisible();
+  await expect(scrollbar).toHaveAttribute("data-progress", "0.0000");
+  await expect(scrollbar).toHaveAttribute("data-wave-state", "still");
+  await expect(scrollbar).toHaveAttribute("data-wave-max-displacement", "0.000");
+  await expect(page.locator("html")).toHaveClass(/wave-scrollbar-active/);
+
+  const bounds = await scrollbar.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.click(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height * 0.56);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1_000);
+  expect(Number(await scrollbar.getAttribute("data-progress"))).toBeGreaterThan(0.5);
+  await expect(scrollbar).toHaveAttribute("data-wave-animating", "true");
+  await expect(scrollbar).toHaveAttribute("data-wave-direction", "down");
+  await expect(scrollbar).toHaveAttribute("data-wave-propagation", "up");
+  expect(Number(await scrollbar.getAttribute("data-wave-max-displacement"))).toBeGreaterThan(0);
+  await expect(scrollbar).toHaveAttribute("data-wave-solver", "fdtd-1d");
+  await expect(scrollbar).toHaveAttribute("data-wave-grid", "192");
+  await expect(scrollbar).toHaveAttribute("data-wave-strands", "3");
+  await expect(scrollbar).toHaveAttribute("data-wave-strengths", "0.72,1.00,0.86");
+  const movingStep = Number(await scrollbar.getAttribute("data-wave-steps"));
+  const movingSignature = await scrollbar.getAttribute("data-wave-signature");
+  await expect.poll(async () => Number(await scrollbar.getAttribute("data-wave-steps"))).toBeGreaterThan(movingStep);
+  await expect.poll(async () => scrollbar.getAttribute("data-wave-signature")).not.toBe(movingSignature);
+
+  await scrollbar.focus();
+  await page.keyboard.press("End");
+  await expect.poll(() => page.evaluate(() => {
+    const maximum = document.documentElement.scrollHeight - window.innerHeight;
+    return maximum - window.scrollY;
+  })).toBeLessThan(4);
+  await page.keyboard.press("Home");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(4);
+  await expect(scrollbar).toHaveAttribute("data-wave-direction", "up");
+  await expect(scrollbar).toHaveAttribute("data-wave-propagation", "down");
+  await expect.poll(async () => scrollbar.getAttribute("data-wave-animating"), { timeout: 9_000 }).toBe("false");
+  await expect(scrollbar).toHaveAttribute("data-wave-state", "still");
+  await expect(scrollbar).toHaveAttribute("data-wave-max-displacement", "0.000");
+});
+
+test("wave propagation scrollbar stays still for reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const scrollbar = page.getByRole("scrollbar", { name: "Page position" });
+
+  await expect(scrollbar).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 900));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
+  await expect(scrollbar).toHaveAttribute("data-wave-animating", "false");
+  await expect(scrollbar).toHaveAttribute("data-wave-state", "still");
+  await expect(scrollbar).toHaveAttribute("data-wave-max-displacement", "0.000");
+  await expect(scrollbar).toHaveAttribute("data-wave-energy", "0.0000");
+  await expect(scrollbar).toHaveAttribute("data-wave-solver", "fdtd-1d");
+});
+
 test("reaction diffusion reverses and accepts pointer perturbations", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
@@ -81,6 +141,7 @@ test("reaction diffusion reverses and accepts pointer perturbations", async ({ p
   expect(dimensions.renderWidth).toBeGreaterThanOrEqual(dimensions.displayWidth);
   expect(dimensions.renderWidth).toBeGreaterThan(dimensions.simulationWidth);
   expect(dimensions.workMs).toBeLessThan(20);
+  await expect(simulation).toHaveAttribute("data-interaction-strength", "1.00");
 
   const bounds = await simulation.boundingBox();
   expect(bounds).not.toBeNull();
@@ -104,6 +165,11 @@ test("reaction diffusion reverses and accepts pointer perturbations", async ({ p
 test("publication field loops independently and responds within its panel", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
+  const hero = page.locator('[data-simulation="hero"]');
+  const heroInteraction = {
+    radius: Number(await hero.getAttribute("data-interaction-radius")),
+    strength: await hero.getAttribute("data-interaction-strength"),
+  };
   const simulation = page.locator('[data-simulation="publication"]');
   await simulation.scrollIntoViewIfNeeded();
 
@@ -113,7 +179,8 @@ test("publication field loops independently and responds within its panel", asyn
   await expect(simulation).toHaveAttribute("data-history", "280");
   await expect(simulation).toHaveAttribute("data-playback-stride", "3");
   await expect(simulation).toHaveAttribute("data-end-hold-frames", "18");
-  expect(Number(await simulation.getAttribute("data-interaction-radius"))).toBeGreaterThanOrEqual(4);
+  expect(Number(await simulation.getAttribute("data-interaction-radius"))).toBe(heroInteraction.radius);
+  await expect(simulation).toHaveAttribute("data-interaction-strength", heroInteraction.strength ?? "1.00");
   const bounds = await simulation.boundingBox();
   expect(bounds).not.toBeNull();
   await page.mouse.move(bounds!.x + bounds!.width * 0.65, bounds!.y + bounds!.height * 0.5);
@@ -149,6 +216,10 @@ for (const profile of [
 
       const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(horizontalOverflow, `${route} should not overflow horizontally`).toBeLessThanOrEqual(1);
+      if (route === "/" && profile.name === "mobile") {
+        const scrollbarColor = await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarColor);
+        expect(scrollbarColor, "the mobile fallback scrollbar should stay themed").not.toBe("auto");
+      }
     }
 
     expect(errors).toEqual([]);

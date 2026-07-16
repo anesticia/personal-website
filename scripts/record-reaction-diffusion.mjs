@@ -49,6 +49,7 @@ async function sampleCanvas(canvas, surface, elapsed) {
       warmupSteps: Number(element.dataset.warmupSteps ?? 0),
       playbackStride: Number(element.dataset.playbackStride ?? 0),
       interactionRadius: Number(element.dataset.interactionRadius ?? 0),
+      interactionStrength: Number(element.dataset.interactionStrength ?? 0),
       endHoldFrames: Number(element.dataset.endHoldFrames ?? 0),
       signature,
     };
@@ -125,6 +126,7 @@ function summarize(surface) {
     warmupSteps: surfaceSamples[0]?.warmupSteps,
     playbackStride: surfaceSamples[0]?.playbackStride,
     interactionRadius: surfaceSamples[0]?.interactionRadius,
+    interactionStrength: surfaceSamples[0]?.interactionStrength,
     endHoldFrames: surfaceSamples[0]?.endHoldFrames,
     meanStateDeltaByPhase: Object.fromEntries(
       Object.entries(differencesByPhase).map(([phase, values]) => [phase, values.reduce((sum, value) => sum + value, 0) / values.length]),
