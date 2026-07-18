@@ -42,10 +42,54 @@ for (const profile of [
       nodes.map((node) => node.textContent?.trim().slice(0, 80) || "<empty reveal>"),
     );
     expect(hiddenReveals).toEqual([]);
-    const simulation = page.locator('[data-simulation="hero"]');
-    await expect(simulation).toBeVisible();
-    expect(await simulation.getAttribute("width")).not.toBe("0");
-    expect(await simulation.getAttribute("height")).not.toBe("0");
+    const topology = page.locator(".atlas-topology-canvas");
+    await expect(topology).toBeVisible();
+    const topologySize = await topology.evaluate((canvas: HTMLCanvasElement) => ({
+      renderWidth: canvas.width,
+      renderHeight: canvas.height,
+      displayWidth: canvas.clientWidth,
+      displayHeight: canvas.clientHeight,
+    }));
+    expect(topologySize.renderWidth).toBeGreaterThanOrEqual(topologySize.displayWidth);
+    expect(topologySize.renderHeight).toBeGreaterThanOrEqual(topologySize.displayHeight);
+    expect(topologySize.displayWidth).toBeGreaterThan(240);
+    expect(topologySize.displayHeight).toBeGreaterThan(240);
+    const fieldTreatment = await page.locator(".atlas-topology-plot").evaluate((plot) => {
+      const plotStyle = getComputedStyle(plot);
+      const canvasStyle = getComputedStyle(plot.querySelector("canvas")!);
+      return {
+        borderLeft: plotStyle.borderLeftWidth,
+        borderBottom: plotStyle.borderBottomWidth,
+        mask: canvasStyle.maskImage || canvasStyle.webkitMaskImage,
+      };
+    });
+    expect(fieldTreatment.borderLeft).toBe("0px");
+    expect(fieldTreatment.borderBottom).toBe("0px");
+    expect(fieldTreatment.mask).toBe("none");
+    const drawnMargins = await topology.evaluate((canvas: HTMLCanvasElement) => {
+      const context = canvas.getContext("2d")!;
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let minX = canvas.width;
+      let minY = canvas.height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < canvas.height; y += 2) {
+        for (let x = 0; x < canvas.width; x += 2) {
+          if (pixels[(y * canvas.width + x) * 4 + 3] <= 8) continue;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+      return [minX, minY, canvas.width - 1 - maxX, canvas.height - 1 - maxY];
+    });
+    expect(Math.min(...drawnMargins), "the terrain should remain clear of every canvas edge").toBeGreaterThan(10);
+    const headerBounds = await page.locator(".atlas-site-header").boundingBox();
+    expect(headerBounds).not.toBeNull();
+    expect(headerBounds!.x).toBeGreaterThan(0);
+    expect(headerBounds!.y).toBeGreaterThan(0);
+    expect(headerBounds!.x + headerBounds!.width).toBeLessThan(profile.width);
     expect(errors).toEqual([]);
 
     await page.screenshot({
@@ -77,6 +121,11 @@ test("wave propagation scrollbar tracks, jumps, and supports the keyboard", asyn
 
   const bounds = await scrollbar.boundingBox();
   expect(bounds).not.toBeNull();
+  const railTreatment = await scrollbar.evaluate((rail) => {
+    const style = getComputedStyle(rail);
+    return { width: style.width, background: style.backgroundColor, borderLeft: style.borderLeftWidth };
+  });
+  expect(railTreatment).toEqual({ width: "44px", background: "rgba(0, 0, 0, 0)", borderLeft: "0px" });
   await page.mouse.click(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height * 0.56);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1_000);
   expect(Number(await scrollbar.getAttribute("data-progress"))).toBeGreaterThan(0.5);
@@ -124,70 +173,55 @@ test("wave propagation scrollbar stays still for reduced motion", async ({ page 
   await expect(scrollbar).toHaveAttribute("data-wave-solver", "fdtd-1d");
 });
 
-test("reaction diffusion reverses and accepts pointer perturbations", async ({ page }) => {
+test("portfolio topology selects projects and exposes their evidence coordinate", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  const simulation = page.locator('[data-simulation="hero"]');
+  const switcher = page.getByRole("navigation", { name: "Select a project coordinate" });
+  const orbit = switcher.getByRole("button", { name: /ORBIT-PINN/ });
 
-  await expect(simulation).toHaveAttribute("data-phase", "reverse", { timeout: 7_000 });
-  const dimensions = await simulation.evaluate((canvas: HTMLCanvasElement) => ({
-    renderWidth: canvas.width,
-    displayWidth: canvas.clientWidth,
-    simulationWidth: Number(canvas.dataset.simulationGrid?.split("x")[0]),
-    renderer: canvas.dataset.renderer,
-    workMs: Number(canvas.dataset.workMs),
-  }));
-  expect(["webgl2", "canvas2d"]).toContain(dimensions.renderer);
-  expect(dimensions.renderWidth).toBeGreaterThanOrEqual(dimensions.displayWidth);
-  expect(dimensions.renderWidth).toBeGreaterThan(dimensions.simulationWidth);
-  expect(dimensions.workMs).toBeLessThan(20);
-  await expect(simulation).toHaveAttribute("data-interaction-strength", "1.00");
-
-  const bounds = await simulation.boundingBox();
-  expect(bounds).not.toBeNull();
-  const target = { x: 0.78, y: 0.32 };
-  await page.mouse.move(
-    bounds!.x + bounds!.width * target.x,
-    bounds!.y + bounds!.height * target.y,
-  );
-  await expect(simulation).toHaveAttribute("data-interacting", "true");
-  await expect(simulation).toHaveAttribute("data-history", "84");
-  const pointer = await simulation.evaluate((canvas: HTMLCanvasElement) => ({
-    x: Number(canvas.dataset.pointerX),
-    y: Number(canvas.dataset.pointerY),
-  }));
-  expect(pointer.x).toBeCloseTo(target.x, 3);
-  expect(pointer.y).toBeCloseTo(target.y, 3);
-  await expect(simulation).toHaveAttribute("data-interacting", "false", { timeout: 2_000 });
-  await expect(simulation).toHaveAttribute("data-history", "84");
+  await expect(orbit).toHaveAttribute("aria-pressed", "false");
+  await orbit.click();
+  await expect(orbit).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".atlas-topology-inspector h2")).toHaveText("ORBIT-PINN");
+  await expect(page.locator(".atlas-topology-inspector").getByText("Shared-method ridges")).toBeVisible();
+  await expect(page.locator(".atlas-topology-inspector").getByRole("link", { name: /Open research record/ })).toHaveAttribute("href", "/work/orbit-pinn");
 });
 
-test("publication field loops independently and responds within its panel", async ({ page }) => {
+test("portfolio topology rotates without obscuring its practical controls", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  const hero = page.locator('[data-simulation="hero"]');
-  const heroInteraction = {
-    radius: Number(await hero.getAttribute("data-interaction-radius")),
-    strength: await hero.getAttribute("data-interaction-strength"),
-  };
-  const simulation = page.locator('[data-simulation="publication"]');
-  await simulation.scrollIntoViewIfNeeded();
-
-  await expect(simulation).toHaveAttribute("data-phase", "hold-end", { timeout: 14_000 });
-  await expect(simulation).toHaveAttribute("data-phase", "reverse", { timeout: 2_000 });
-  await expect(simulation).toHaveAttribute("data-renderer", /^(webgl2|canvas2d)$/);
-  await expect(simulation).toHaveAttribute("data-history", "280");
-  await expect(simulation).toHaveAttribute("data-playback-stride", "3");
-  await expect(simulation).toHaveAttribute("data-end-hold-frames", "18");
-  expect(Number(await simulation.getAttribute("data-interaction-radius"))).toBe(heroInteraction.radius);
-  await expect(simulation).toHaveAttribute("data-interaction-strength", heroInteraction.strength ?? "1.00");
-  const bounds = await simulation.boundingBox();
+  const topology = page.locator(".atlas-topology-canvas");
+  const bounds = await topology.boundingBox();
   expect(bounds).not.toBeNull();
-  await page.mouse.move(bounds!.x + bounds!.width * 0.65, bounds!.y + bounds!.height * 0.5);
-  await expect(simulation).toHaveAttribute("data-interacting", "true");
-  await expect(simulation).toHaveAttribute("data-history", "280");
-  await expect(simulation).toHaveAttribute("data-interacting", "false", { timeout: 2_000 });
-  await expect(simulation).toHaveAttribute("data-history", "280");
+  await page.mouse.move(bounds!.x + bounds!.width * 0.35, bounds!.y + bounds!.height * 0.45);
+  await page.mouse.down();
+  await page.mouse.move(bounds!.x + bounds!.width * 0.62, bounds!.y + bounds!.height * 0.58, { steps: 8 });
+  await page.mouse.up();
+
+  await expect(page.getByRole("navigation", { name: "Select a project coordinate" })).toBeVisible();
+  await expect(page.locator(".atlas-topology-inspector h2")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("research reference field uses four layers and relocates its source", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/research");
+  const field = page.locator(".research-wave-field");
+  const canvas = field.locator("canvas");
+
+  await expect(canvas).toBeVisible();
+  await expect(canvas).toHaveAttribute("data-field-model", "reference");
+  await expect(canvas).toHaveAttribute("data-material-layers", "4");
+  await expect(canvas).toHaveAttribute("data-target-fps", "30");
+  await expect(field.getByRole("button")).toHaveCount(0);
+  await expect(field.locator(".research-wave-readout")).toContainText("Reference field");
+  await expect(field.locator(".research-wave-readout")).toContainText("Four-layer medium");
+
+  const bounds = await canvas.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.click(bounds!.x + bounds!.width * 0.62, bounds!.y + bounds!.height * 0.34);
+  await expect(field.locator(".research-wave-readout")).toContainText(/source 62 . 34/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
 for (const profile of [

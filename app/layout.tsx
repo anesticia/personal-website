@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { WaveScrollbar } from "@/components/wave-scrollbar";
 import { site } from "@/data/site";
 import "./globals.css";
+import "./atlas.css";
 
 const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const serif = Source_Serif_4({
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export const viewport: Viewport = { themeColor: "#1b1e19", colorScheme: "light" };
+export const viewport: Viewport = { themeColor: "#e8decc", colorScheme: "light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const personJsonLd = {
