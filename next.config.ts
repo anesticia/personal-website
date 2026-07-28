@@ -41,6 +41,8 @@ const documentSources = [
   "/archive",
   "/contact",
   "/research",
+  "/prototypes",
+  "/prototypes/:path*",
   "/work/:slug",
   "/feed.xml",
   "/robots.txt",

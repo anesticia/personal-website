@@ -48,7 +48,13 @@ export function ResearchWaveField() {
     const context = canvas?.getContext("2d", { alpha: true });
     if (!root || !canvas || !context) return;
 
-    sourceRef.current.startedAt = performance.now();
+    const portraitInstrument = canvas.getBoundingClientRect().width <= 900;
+    if (portraitInstrument && sourceRef.current.x > 0.6) {
+      sourceRef.current = { x: 0.52, y: sourceRef.current.y, startedAt: performance.now() };
+      setSourceLabel({ x: 52, y: Math.round(sourceRef.current.y * 100) });
+    } else {
+      sourceRef.current.startedAt = performance.now();
+    }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
     let lastFrame = 0;
@@ -159,10 +165,18 @@ export function ResearchWaveField() {
       context.save();
       context.globalCompositeOperation = "destination-in";
       const fieldFade = context.createLinearGradient(0, 0, width, 0);
-      fieldFade.addColorStop(0, "rgba(0,0,0,.08)");
-      fieldFade.addColorStop(0.3, "rgba(0,0,0,.2)");
-      fieldFade.addColorStop(0.5, "rgba(0,0,0,.76)");
-      fieldFade.addColorStop(0.64, "rgba(0,0,0,1)");
+      if (width <= 900) {
+        // Portrait screens stack the narrative above the instrument instead of
+        // reserving a desktop-sized quiet column on the left.
+        fieldFade.addColorStop(0, "rgba(0,0,0,.42)");
+        fieldFade.addColorStop(0.22, "rgba(0,0,0,.7)");
+        fieldFade.addColorStop(0.46, "rgba(0,0,0,1)");
+      } else {
+        fieldFade.addColorStop(0, "rgba(0,0,0,.08)");
+        fieldFade.addColorStop(0.3, "rgba(0,0,0,.2)");
+        fieldFade.addColorStop(0.5, "rgba(0,0,0,.76)");
+        fieldFade.addColorStop(0.64, "rgba(0,0,0,1)");
+      }
       context.fillStyle = fieldFade;
       context.fillRect(0, 0, width, height);
       context.restore();
@@ -207,10 +221,11 @@ export function ResearchWaveField() {
       context.font = "500 11px ui-monospace, SFMono-Regular, Consolas, monospace";
       context.fillText("SOURCE", sourceX + 25, sourceY - 10);
       if (width >= 700) {
+        const layerLabelX = width <= 900 ? width * 0.08 : width * 0.58;
         context.fillText("SENSOR", sensorX + 10, height * 0.12 - 8);
         layerEdges.slice(0, -1).forEach((start, index) => {
           const y = Math.max(112, start * height + 22);
-          context.fillText(`LAYER 0${index + 1}  ·  c/c₀ ${SPEEDS[index].toFixed(2)}`, width * 0.58, y);
+          context.fillText(`LAYER 0${index + 1}  ·  c/c₀ ${SPEEDS[index].toFixed(2)}`, layerLabelX, y);
         });
       }
 

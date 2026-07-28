@@ -13,7 +13,7 @@ export function SearchIcon({ size = 18, className }: IconProps) {
 }
 
 export function MenuIcon({ size = 22, className }: IconProps) {
-  return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h16M4 16h16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>;
+  return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path className="menu-line menu-line-top" d="M4 8h16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/><path className="menu-line menu-line-bottom" d="M4 16h16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>;
 }
 
 export function CloseIcon({ size = 22, className }: IconProps) {

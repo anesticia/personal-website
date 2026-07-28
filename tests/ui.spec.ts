@@ -10,6 +10,42 @@ const contentRoutes = [
   ...works.map((work) => `/work/${work.slug}`),
 ];
 
+const portraitPrototypeRoutes = [
+  "/prototypes",
+  ...[
+    "journal-cover",
+    "research-terminal",
+    "constellation-map",
+    "academic-preprint",
+    "specimen-gallery",
+    "field-observatory",
+    "brutalist-index",
+    "research-timeline",
+    "lab-notebook",
+    "cinematic-monograph",
+  ].map((variant) => `/prototypes/${variant}`),
+  "/prototypes/physics",
+  ...[
+    "phase-portrait",
+    "vector-field",
+    "wave-interference",
+    "tensor-manifold",
+    "lagrangian-mechanics",
+    "topology-lab",
+    "hamiltonian-contours",
+    "feynman-paths",
+    "pde-boundary-lab",
+    "fourier-synthesis",
+  ].map((variant) => `/prototypes/physics/${variant}`),
+  "/prototypes/field-manifold",
+  ...[
+    "force-fabric",
+    "curvature-atlas",
+    "tensor-coordinates",
+    "method-collider",
+  ].map((variant) => `/prototypes/field-manifold/${variant}`),
+];
+
 async function settlePage(page: import("@playwright/test").Page) {
   await page.waitForTimeout(200);
   await page.evaluate(() => document.fonts.ready);
@@ -128,7 +164,7 @@ test("wave propagation scrollbar tracks, jumps, and supports the keyboard", asyn
   expect(railTreatment).toEqual({ width: "44px", background: "rgba(0, 0, 0, 0)", borderLeft: "0px" });
   await page.mouse.click(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height * 0.56);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1_000);
-  expect(Number(await scrollbar.getAttribute("data-progress"))).toBeGreaterThan(0.5);
+  await expect.poll(async () => Number(await scrollbar.getAttribute("data-progress"))).toBeGreaterThan(0.5);
   await expect(scrollbar).toHaveAttribute("data-wave-animating", "true");
   await expect(scrollbar).toHaveAttribute("data-wave-direction", "down");
   await expect(scrollbar).toHaveAttribute("data-wave-propagation", "up");
@@ -164,13 +200,45 @@ test("wave propagation scrollbar stays still for reduced motion", async ({ page 
   const scrollbar = page.getByRole("scrollbar", { name: "Page position" });
 
   await expect(scrollbar).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, 900));
+  await page.mouse.wheel(0, 900);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
   await expect(scrollbar).toHaveAttribute("data-wave-animating", "false");
   await expect(scrollbar).toHaveAttribute("data-wave-state", "still");
   await expect(scrollbar).toHaveAttribute("data-wave-max-displacement", "0.000");
   await expect(scrollbar).toHaveAttribute("data-wave-energy", "0.0000");
   await expect(scrollbar).toHaveAttribute("data-wave-solver", "fdtd-1d");
+});
+
+test("the portrait navigation uses a finite entrance and respects reduced motion", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/research");
+  await settlePage(page);
+
+  const animationNames = await page.locator(".atlas-site-header").evaluate((header) => ({
+    geometry: getComputedStyle(header.querySelector(".nav-island-geometry")!).animationName,
+    surface: getComputedStyle(header.querySelector(".nav-island-surface")!).animationName,
+    content: getComputedStyle(header.querySelector(".wordmark")!).animationName,
+  }));
+  expect(animationNames).toEqual({
+    geometry: "nav-island-reveal",
+    surface: "nav-island-settle",
+    content: "nav-content-arrive",
+  });
+  const iterationCounts = await page.locator(".atlas-site-header").evaluate((header) => ({
+    geometry: getComputedStyle(header.querySelector(".nav-island-geometry")!).animationIterationCount,
+    surface: getComputedStyle(header.querySelector(".nav-island-surface")!).animationIterationCount,
+    content: getComputedStyle(header.querySelector(".wordmark")!).animationIterationCount,
+  }));
+  expect(iterationCounts).toEqual({ geometry: "1", surface: "1", content: "1" });
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  const reducedAnimationNames = await page.locator(".atlas-site-header").evaluate((header) => ({
+    geometry: getComputedStyle(header.querySelector(".nav-island-geometry")!).animationName,
+    surface: getComputedStyle(header.querySelector(".nav-island-surface")!).animationName,
+    content: getComputedStyle(header.querySelector(".wordmark")!).animationName,
+  }));
+  expect(reducedAnimationNames).toEqual({ geometry: "none", surface: "none", content: "none" });
 });
 
 test("portfolio topology selects projects and exposes their evidence coordinate", async ({ page }) => {
@@ -260,6 +328,31 @@ for (const profile of [
   });
 }
 
+test("every prototype family remains usable in phone portrait", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const route of portraitPrototypeRoutes) {
+    const response = await page.goto(route, { waitUntil: "load" });
+    expect(response?.status(), `${route} should return 200`).toBe(200);
+    const headers = response?.headers();
+    expect(headers?.["content-security-policy"], `${route} should carry the document CSP`).toContain("default-src 'self'");
+    expect(headers?.["strict-transport-security"], `${route} should carry HSTS`).toContain("max-age=63072000");
+    expect(headers?.["x-content-type-options"], `${route} should disable MIME sniffing`).toBe("nosniff");
+    await expect(page.locator("h1"), `${route} should have a visible primary heading`).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+      `${route} should not overflow horizontally`,
+    ).toBeLessThanOrEqual(1);
+  }
+
+  expect(errors).toEqual([]);
+});
+
 test("archive search and filters remain usable", async ({ page }) => {
   await page.goto("/archive");
   const search = page.getByPlaceholder("Search methods, topics, or tools");
@@ -298,6 +391,42 @@ test("mobile navigation reaches every primary section", async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`${route}$`));
   }
 });
+
+for (const profile of [
+  { name: "phone portrait", width: 390, height: 844 },
+  { name: "tablet portrait", width: 768, height: 1024 },
+]) {
+  test(`interactive surfaces recompose on ${profile.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: profile.width, height: profile.height });
+
+    await page.goto("/");
+    const topology = page.locator(".atlas-topology-canvas");
+    await expect(topology).toBeVisible();
+    const topologyBounds = await topology.boundingBox();
+    expect(topologyBounds).not.toBeNull();
+    expect(topologyBounds!.y, "the topology should begin inside the first portrait viewport").toBeLessThan(profile.height);
+    expect(topologyBounds!.height).toBeGreaterThan(300);
+    const heroBounds = await page.locator(".atlas-home-hero").boundingBox();
+    const inspectorBounds = await page.locator(".atlas-topology-inspector").boundingBox();
+    expect(heroBounds).not.toBeNull();
+    expect(inspectorBounds).not.toBeNull();
+    expect(inspectorBounds!.y + inspectorBounds!.height, "the inspector should remain inside its portrait stage").toBeLessThanOrEqual(heroBounds!.y + heroBounds!.height + 1);
+    await expect(page.getByRole("scrollbar", { name: "Page position" })).toBeHidden();
+
+    await page.goto("/research");
+    const field = page.locator(".research-wave-field canvas");
+    await expect(field).toBeVisible();
+    const fieldBounds = await field.boundingBox();
+    expect(fieldBounds).not.toBeNull();
+    expect(fieldBounds!.y).toBeLessThan(profile.height * 0.65);
+    expect(fieldBounds!.height).toBeGreaterThan(profile.height * 0.45);
+    const researchCopyBounds = await page.locator(".atlas-research-hero-copy").boundingBox();
+    expect(researchCopyBounds).not.toBeNull();
+    expect(fieldBounds!.y, "the portrait instrument should begin after the narrative copy").toBeGreaterThanOrEqual(researchCopyBounds!.y + researchCopyBounds!.height);
+    await expect(page.locator(".research-wave-readout")).toContainText("source 52");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  });
+}
 
 test("contact form reports a successful submission without sending mail", async ({ page }) => {
   let submittedBody: Record<string, string> | undefined;

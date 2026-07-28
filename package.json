@@ -14,7 +14,7 @@
     "test": "npm run security:test && npm run typecheck && npm run lint && npm run build && npm run ui:test"
   },
   "dependencies": {
-    "next": "16.2.10",
+    "next": "16.2.12",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "zod": "^4.1.12"
@@ -24,13 +24,14 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "16.2.10",
-    "sharp": "^0.34.5",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.12",
+    "sharp": "0.35.3",
     "typescript": "6.0.3",
     "vitest": "^3.2.7"
   },
   "overrides": {
-    "postcss": "8.5.10"
+    "postcss": "8.5.23",
+    "sharp": "0.35.3"
   }
 }

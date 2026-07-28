@@ -25,6 +25,7 @@ function TopologyCanvas({ active, onActive }: { active: number; onActive: (index
 
     const draw = (time = 0) => {
       const box = canvas.getBoundingClientRect();
+      const compact = box.width < 700;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const pixelWidth = Math.round(box.width * dpr);
       const pixelHeight = Math.round(box.height * dpr);
@@ -68,7 +69,9 @@ function TopologyCanvas({ active, onActive }: { active: number; onActive: (index
             const [screenX, screenY] = project(x, surface(x, z), z);
             if (column) context.lineTo(screenX, screenY); else context.moveTo(screenX, screenY);
           }
-          context.strokeStyle = row % 4 === 0 ? "rgba(96,52,33,.38)" : "rgba(96,52,33,.14)";
+          context.strokeStyle = row % 4 === 0
+            ? `rgba(96,52,33,${compact ? ".58" : ".38"})`
+            : `rgba(96,52,33,${compact ? ".24" : ".14"})`;
           context.stroke();
         }
       }
