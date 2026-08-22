@@ -223,14 +223,14 @@ function createCanvasRenderer(canvas: HTMLCanvasElement, context: CanvasRenderin
   };
 }
 
-export function ReactionDiffusionCanvas({ variant = "hero" }: { variant?: SimulationVariant }) {
+export function ReactionDiffusionCanvas({ variant = "hero", minimumFieldAspect = 0.35 }: { variant?: SimulationVariant; minimumFieldAspect?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     let canvas = canvasRef.current as DebugCanvas | null;
     if (!canvas) return;
     const initialCanvas = canvas;
-    const closestSurface = variant === "hero" ? canvas.closest<HTMLElement>(".hero") : canvas.parentElement;
+    const closestSurface = variant === "hero" ? canvas.closest<HTMLElement>(".hero") ?? canvas.parentElement : canvas.parentElement;
     if (!closestSurface) return;
     const surface: HTMLElement = closestSurface;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -420,7 +420,7 @@ export function ReactionDiffusionCanvas({ variant = "hero" }: { variant?: Simula
 
     function initialize() {
       const bounds = surface.getBoundingClientRect();
-      const aspect = Math.max(0.35, bounds.width / Math.max(bounds.height, 1));
+      const aspect = Math.max(0.35, minimumFieldAspect, bounds.width / Math.max(bounds.height, 1));
       const hardwareThreads = navigator.hardwareConcurrency || 4;
       const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
       const lowPower = hardwareThreads <= 4 || memory <= 2;
@@ -574,7 +574,7 @@ export function ReactionDiffusionCanvas({ variant = "hero" }: { variant?: Simula
         delete canvas.__reactionDiffusionSize;
       }
     };
-  }, [variant]);
+  }, [minimumFieldAspect, variant]);
 
   return <canvas ref={canvasRef} className={`reaction-diffusion-canvas reaction-diffusion-canvas--${variant}`} data-simulation={variant} aria-hidden="true" />;
 }

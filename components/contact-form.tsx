@@ -38,6 +38,7 @@ export function ContactForm() {
       <label className="honeypot" aria-hidden="true"><span>Company website</span><input name="website" tabIndex={-1} autoComplete="off" /></label>
       {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && <div className="cf-turnstile" data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />}
       <div className="form-action"><button className="button button-dark" type="submit" disabled={state.status === "sending"}>Send message <ArrowIcon /></button><p className={`form-status ${state.status}`} role="status">{state.message}</p></div>
+      <p className="contact-form-note">Your email is only used to reply.</p>
     </form>
   );
 }

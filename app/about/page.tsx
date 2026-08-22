@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon, ExternalIcon } from "@/components/icons";
+import { ReactionDiffusionCanvas } from "@/components/reaction-diffusion-hero";
 import { Reveal } from "@/components/reveal";
 import { site } from "@/data/site";
 
@@ -19,8 +19,8 @@ export default function AboutPage() {
       <header className="atlas-page-hero atlas-about-hero"><div><p className="atlas-kicker">About · Research practice</p><h1>Research should leave a trail <em>someone else can follow.</em></h1><p>I am Laurentius Andre Cornelis Rudolf Huizen—usually Andre—an Informatics student and independent researcher in Yogyakarta, Indonesia.</p></div></header>
 
       <section className="atlas-about-position">
-        <Reveal className="atlas-about-image"><Image src="/images/numerical-methods.26abe82439e0.webp" alt="Six numerical methods compared on the same reaction–diffusion system" fill sizes="(max-width: 900px) 100vw, 52vw" /></Reveal>
-        <Reveal className="atlas-about-copy" delay={100}><p className="atlas-kicker">Position · Between disciplines</p><h2>Mathematical structure meets computational experiment.</h2><p>My central interest is scientific machine learning: using physical knowledge, differential equations, and numerical references to make learning systems more trustworthy and useful.</p><p>I also build software experiments—chess engines, geolocation tools, and desktop applications—because implementation exposes questions that theory alone can hide.</p><blockquote>Explicit assumptions. Reproducible baselines. Honest status. Negative results kept as evidence.</blockquote></Reveal>
+        <div className="atlas-about-simulation"><ReactionDiffusionCanvas variant="hero" minimumFieldAspect={1.25} /><div className="atlas-about-simulation-label"><span>Gray–Scott · live field</span><small>Drag · F .037 · K .060</small></div></div>
+        <Reveal className="atlas-about-copy" delay={100}><p className="atlas-kicker">What I work on</p><h2>I build and test models for physical systems.</h2><p>My current work covers reaction–diffusion, wave propagation, and charged-particle dynamics. I use numerical solvers as references, then test where learned models help and where they fail.</p><p>I also build chess and geolocation software when the clearest way to understand an idea is to make it run.</p></Reveal>
       </section>
 
       <section className="atlas-timeline section-pad"><header><p className="atlas-kicker">Academic path · Chronology</p><h2>A short path with visible coordinates.</h2></header><div>{path.map(([date, title, copy], index) => <Reveal key={date} delay={index * 70}><article><span>{date}</span><b>0{index + 1}</b><div><h3>{title}</h3><p>{copy}</p></div></article></Reveal>)}</div></section>

@@ -29,11 +29,11 @@ export function ArchiveClient({ works }: { works: Work[] }) {
     <div className="archive-browser">
       <div className="archive-tools">
         <label className="search-field"><SearchIcon /><span className="sr-only">Search the archive</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search methods, topics, or tools" /></label>
+        <p className="result-count" aria-live="polite">{results.length} {results.length === 1 ? "entry" : "entries"}</p>
         <div className="filter-list" aria-label="Filter archive">
           {filters.map((item) => <button type="button" key={item.value} className={filter === item.value ? "active" : ""} onClick={() => setFilter(item.value)}>{item.label}</button>)}
         </div>
       </div>
-      <p className="result-count" aria-live="polite">{results.length} {results.length === 1 ? "entry" : "entries"}</p>
       <div className="work-list">
         {results.map((work, index) => <WorkRow key={work.slug} work={work} index={index} />)}
       </div>

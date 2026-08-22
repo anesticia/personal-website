@@ -209,48 +209,36 @@ test("wave propagation scrollbar stays still for reduced motion", async ({ page 
   await expect(scrollbar).toHaveAttribute("data-wave-solver", "fdtd-1d");
 });
 
-test("the portrait navigation uses a finite entrance and respects reduced motion", async ({ page }) => {
+test("the portrait navigation is rectilinear, finite, and respects reduced motion", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/research");
   await settlePage(page);
 
-  const animationNames = await page.locator(".atlas-site-header").evaluate((header) => ({
-    geometry: getComputedStyle(header.querySelector(".nav-island-geometry")!).animationName,
-    surface: getComputedStyle(header.querySelector(".nav-island-surface")!).animationName,
-    content: getComputedStyle(header.querySelector(".wordmark")!).animationName,
+  const navigationState = await page.locator(".atlas-site-header").evaluate((header) => ({
+    radius: getComputedStyle(header).borderRadius,
+    geometryCount: header.querySelectorAll(".nav-island-geometry").length,
+    activeRuleContent: getComputedStyle(header.querySelector(".nav-links a.active")!, "::after").content,
+    contentAnimation: getComputedStyle(header.querySelector(".wordmark")!).animationName,
+    contentIterations: getComputedStyle(header.querySelector(".wordmark")!).animationIterationCount,
   }));
-  expect(animationNames).toEqual({
-    geometry: "nav-island-reveal",
-    surface: "nav-island-settle",
-    content: "nav-content-arrive",
-  });
-  const iterationCounts = await page.locator(".atlas-site-header").evaluate((header) => ({
-    geometry: getComputedStyle(header.querySelector(".nav-island-geometry")!).animationIterationCount,
-    surface: getComputedStyle(header.querySelector(".nav-island-surface")!).animationIterationCount,
-    content: getComputedStyle(header.querySelector(".wordmark")!).animationIterationCount,
-  }));
-  expect(iterationCounts).toEqual({ geometry: "1", surface: "1", content: "1" });
+  expect(navigationState).toEqual({ radius: "10px", geometryCount: 0, activeRuleContent: "none", contentAnimation: "nav-content-arrive", contentIterations: "1" });
+  await expect(page.getByRole("link", { name: "Research records" })).toHaveCount(0);
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
-  const reducedAnimationNames = await page.locator(".atlas-site-header").evaluate((header) => ({
-    geometry: getComputedStyle(header.querySelector(".nav-island-geometry")!).animationName,
-    surface: getComputedStyle(header.querySelector(".nav-island-surface")!).animationName,
-    content: getComputedStyle(header.querySelector(".wordmark")!).animationName,
-  }));
-  expect(reducedAnimationNames).toEqual({ geometry: "none", surface: "none", content: "none" });
+  await expect(page.locator(".atlas-site-header .wordmark")).toHaveCSS("animation-name", "none");
 });
 
 test("portfolio topology selects projects and exposes their evidence coordinate", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   const switcher = page.getByRole("navigation", { name: "Select a project coordinate" });
-  const orbit = switcher.getByRole("button", { name: /ORBIT-PINN/ });
+  const orbit = switcher.getByRole("button", { name: /Shared Structure-Preserving Local Flow/ });
 
   await expect(orbit).toHaveAttribute("aria-pressed", "false");
   await orbit.click();
   await expect(orbit).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator(".atlas-topology-inspector h2")).toHaveText("ORBIT-PINN");
+  await expect(page.locator(".atlas-topology-inspector h2")).toHaveText("Shared Structure-Preserving Local Flow");
   await expect(page.locator(".atlas-topology-inspector").getByText("Shared-method ridges")).toBeVisible();
   await expect(page.locator(".atlas-topology-inspector").getByRole("link", { name: /Open research record/ })).toHaveAttribute("href", "/work/orbit-pinn");
 });
@@ -355,6 +343,7 @@ test("every prototype family remains usable in phone portrait", async ({ page })
 
 test("archive search and filters remain usable", async ({ page }) => {
   await page.goto("/archive");
+  await expect(page.locator(".archive-tools > .result-count")).toHaveCount(1);
   const search = page.getByPlaceholder("Search methods, topics, or tools");
   await expect(page.locator(".result-count")).toHaveText(`${works.length} entries`);
 
@@ -371,6 +360,151 @@ test("archive search and filters remain usable", async ({ page }) => {
   await expect(page.locator(".empty-state")).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.locator(".result-count")).toHaveText(`${works.length} entries`);
+});
+
+test("archive rows keep their dark hover surface behind light text", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/archive");
+  const firstRow = page.locator(".work-row").first();
+  await firstRow.hover();
+  await page.waitForTimeout(450);
+  const hoverState = await firstRow.evaluate((row) => {
+    const rowStyle = getComputedStyle(row);
+    const surface = getComputedStyle(row, "::before");
+    return {
+      isolation: rowStyle.isolation,
+      color: rowStyle.color,
+      surfaceColor: surface.backgroundColor,
+      surfaceTransform: surface.transform,
+    };
+  });
+  expect(hoverState.isolation).toBe("isolate");
+  expect(hoverState.color).toBe("rgb(235, 229, 213)");
+  expect(hoverState.surfaceColor).toBe("rgb(29, 23, 19)");
+  expect(hoverState.surfaceTransform).toBe("matrix(1, 0, 0, 1, 0, 0)");
+});
+
+test("annotated composition fixes remain scoped", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
+  await page.goto("/research");
+  const completeFigure = page.locator(".atlas-research-image--contain img");
+  await expect(completeFigure).toHaveCount(1);
+  await expect(completeFigure).toHaveCSS("object-fit", "contain");
+  await expect(page.locator(".atlas-research-hero-copy .atlas-kicker")).toHaveCount(0);
+  await expect(page.locator(".research-programs > header")).toHaveCount(0);
+  await expect(page.locator(".atlas-research-hero + .research-programs")).toHaveCount(1);
+
+  await page.goto("/");
+  await expect(page.locator(".atlas-method")).toHaveCount(0);
+  await expect(page.locator(".atlas-contract")).toHaveCount(0);
+  await expect(page.locator(".atlas-home-hero + .atlas-home-register")).toHaveCount(1);
+  await expect(page.locator(".atlas-home-register .atlas-kicker")).toHaveCount(0);
+  await expect(page.locator(".atlas-closing .atlas-kicker")).toHaveCount(0);
+  await expect(page.locator(".atlas-publication + .atlas-closing")).toHaveCount(1);
+});
+
+test("archive, about, and contact annotations replace filler with useful UI", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
+  await page.goto("/archive");
+  await expect(page.locator(".atlas-archive-intro")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Archive record index" }).getByRole("link")).toHaveCount(works.length);
+  await expect(page.locator(".atlas-archive-hero h1 em")).toHaveCSS("font-style", "normal");
+
+  await page.goto("/about");
+  const simulation = page.locator(".atlas-about-simulation canvas");
+  await expect(page.locator(".atlas-about-image")).toHaveCount(0);
+  await expect(simulation).toBeVisible();
+  await expect(simulation).toHaveAttribute("data-simulation", "hero");
+  await simulation.scrollIntoViewIfNeeded();
+  const bounds = await simulation.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.move(bounds!.x + bounds!.width * 0.58, bounds!.y + bounds!.height * 0.42);
+  await expect(simulation).toHaveAttribute("data-interacting", "true");
+  await expect(page.locator(".atlas-about-simulation-label strong")).toHaveCount(0);
+  await expect(page.locator(".atlas-about-simulation-label")).toHaveText("Gray–Scott · live fieldDrag · F .037 · K .060");
+  await expect(page.locator(".atlas-about-copy blockquote")).toHaveCount(0);
+  await expect(page.locator(".atlas-about-copy h2")).toHaveText("I build and test models for physical systems.");
+
+  await page.goto("/contact");
+  await expect(page.locator(".atlas-contact-workspace aside")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Send me a message." })).toBeVisible();
+  await expect(page.locator(".contact-form-note")).toHaveText("Your email is only used to reply.");
+});
+
+test("home labels are restrained and every dossier opens with a compact orientation", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await expect(page.locator(".atlas-axis")).toHaveCount(0);
+  await expect(page.locator(".home-signal-strip")).toHaveCount(0);
+  const registerLines = page.locator(".atlas-register-heading h2").locator("span, em");
+  await expect(registerLines).toHaveCount(2);
+  for (const line of await registerLines.all()) await expect(line).toHaveCSS("white-space", "nowrap");
+
+  for (const work of works) {
+    await page.goto(`/work/${work.slug}`);
+    const hero = page.locator(".dossier-hero");
+    const heroBounds = await hero.boundingBox();
+    expect(heroBounds).not.toBeNull();
+    expect(heroBounds!.height, `${work.slug} orientation should not consume the viewport`).toBeLessThan(720);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("reaction-diffusion dossier uses an interactive evidence plot instead of a hero image", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/work/reaction-diffusion");
+  await expect(page.locator(".dossier-hero-image")).toHaveCount(0);
+  const canvas = page.locator(".reaction-horizon canvas");
+  await expect(canvas).toBeVisible();
+  await expect(canvas).toHaveAttribute("data-diagnostic", "reaction-horizon");
+  const size = await canvas.evaluate((node: HTMLCanvasElement) => [node.width, node.height]);
+  expect(size[0]).toBeGreaterThan(400);
+  expect(size[1]).toBeGreaterThan(240);
+  const longHorizon = page.getByRole("button", { name: "t = 9000" });
+  await longHorizon.click();
+  await expect(longHorizon).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".reaction-horizon-readout")).toContainText("0.19974 RMSE");
+  await expect(page.locator(".reaction-horizon-readout")).toContainText("Long-horizon divergence");
+});
+
+test("complete research dossiers expose evidence, limits, provenance, and next gates", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  for (const work of works) {
+    await page.goto(`/work/${work.slug}`);
+    await expect(page.locator(".dossier-page h1")).toHaveText(work.title);
+    await expect(page.getByRole("navigation", { name: "Research dossier chapters" })).toBeVisible();
+    await expect(page.locator("#checkpoint .dossier-metric-grid article")).toHaveCount(6);
+    await expect(page.locator("#limitations li")).toHaveCount(4);
+    await expect(page.locator("#reproducibility .dossier-manifest div")).toHaveCount(5);
+    await expect(page.locator("#next-gate li")).toHaveCount(4);
+  }
+});
+
+test("the dossier field index tracks reading position and provenance expands", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/work/orbit-pinn");
+  const rail = page.getByRole("navigation", { name: "Research dossier chapters" });
+  const limitations = rail.getByRole("link", { name: /Limitations/ });
+  await limitations.click();
+  await expect(page).toHaveURL(/#limitations$/);
+  await expect.poll(async () => limitations.getAttribute("aria-current")).toBe("location");
+  const provenance = page.locator(".dossier-provenance");
+  await provenance.locator("summary").click();
+  await expect(provenance).toHaveAttribute("open", "");
+  await expect(provenance).toContainText("V5 pilot");
+});
+
+test("research page exposes programs, systems, and the public record", async ({ page }) => {
+  await page.goto("/research");
+  await expect(page.locator(".research-reading-key")).toHaveCount(0);
+  await expect(page.locator(".atlas-research-list article")).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Shared Structure-Preserving Local Flow" })).toBeVisible();
+  await expect(page.locator(".research-system-row")).toHaveCount(2);
+  await expect(page.getByText("V5 pilot evaluated", { exact: false })).toBeVisible();
+  await expect(page.getByText("D1 data collection blocked", { exact: false })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open evidence dossier" })).toHaveAttribute("href", "/work/object-classification-paper");
 });
 
 test("mobile navigation reaches every primary section", async ({ page }) => {

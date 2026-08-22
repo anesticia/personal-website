@@ -27,12 +27,12 @@ export const atlasRecords: AtlasRecord[] = [
     rationale: "A numerical model turns reaction laws into comparable pattern dynamics.",
     question: "Do numerical schemes preserve the same pattern dynamics?",
     reference: "Fourier pseudo-spectral + ETDRK4",
-    boundary: "Active research; six-scheme benchmark, not a universal solver ranking.",
+    boundary: "Two active tracks; the numerical target favors its own solver family and neural error rises materially after the middle horizon.",
     source: "Local research record",
   },
   {
     slug: "orbit-pinn",
-    code: "OP",
+    code: "SP",
     accent: "#f5b85b",
     terrain: [0.45, -0.58, 0.72],
     methods: ["PINN", "Autodiff", "Fourier features", "Invariants"],
@@ -40,9 +40,9 @@ export const atlasRecords: AtlasRecord[] = [
     context: "Physical system",
     scope: "Research method",
     rationale: "A constrained neural solver learns trajectories while preserving physical structure.",
-    question: "Can rolling PINNs preserve long-horizon charged-particle dynamics?",
-    reference: "Kinematics, Lorentz-force, and energy residuals",
-    boundary: "Active local research; no finished performance claim.",
+    question: "Can one shared local flow preserve useful dynamics across three magnetic-field families?",
+    reference: "Boris trajectories plus phase, turn, bounce, azimuth, and RMSE diagnostics",
+    boundary: "V4 shows limited feasibility; V5 pilot failed and V4.5 remains incomplete. Energy preservation is not trajectory accuracy.",
     source: "Local paper artifacts",
   },
   {
@@ -57,7 +57,7 @@ export const atlasRecords: AtlasRecord[] = [
     rationale: "PINN predictions are read against a finite-difference reference.",
     question: "How do PINNs compare with FDTD in heterogeneous media?",
     reference: "Finite-difference time-domain",
-    boundary: "Thesis in progress; represented as ongoing research.",
+    boundary: "Thesis completed; upgraded layered case reaches 70.04% final relative L2 and the two medium definitions are not exactly matched.",
     source: "Local thesis artifacts",
   },
   {
@@ -72,7 +72,7 @@ export const atlasRecords: AtlasRecord[] = [
     rationale: "An engine, arena, and benchmark protocol form a reusable experimentation system.",
     question: "Does a candidate engine change improve play?",
     reference: "Paired games with confidence gates",
-    boundary: "M7 in progress; explicitly not presented as Stockfish-level.",
+    boundary: "M7 in progress; the best completed 400-game candidate failed the CI95 promotion gate and is not presented as Stockfish-level.",
     source: "Local research record",
   },
   {
@@ -87,7 +87,7 @@ export const atlasRecords: AtlasRecord[] = [
     rationale: "Visual evidence, provenance, and local services support explainable ranking.",
     question: "Can geolocation evidence remain explainable and licensed?",
     reference: "Manifest, attribution, duplicate checks, and quality reports",
-    boundary: "M4 dataset foundation; not a live-game automation client.",
+    boundary: "Synthetic M4 fixture only; real D1 corpus is 0 / 10,700 while collection access is unavailable.",
     source: "Local research record",
   },
   {
@@ -102,7 +102,7 @@ export const atlasRecords: AtlasRecord[] = [
     rationale: "Engineered image features feed a published classifier experiment.",
     question: "Do edge and histogram features improve classification?",
     reference: "Published study split and DOI record",
-    boundary: "Published result; full methodology and limits remain in the paper.",
+    boundary: "Published study-split result; repeated seeds, leakage checks, and external validation are not reported.",
     source: "Public journal article",
   },
 ];

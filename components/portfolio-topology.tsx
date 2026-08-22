@@ -181,9 +181,6 @@ export function PortfolioTopology() {
     <div className="atlas-topology" style={{ "--record-accent": record.accent } as CSSProperties}>
       <div className="atlas-topology-plot">
         <TopologyCanvas active={active} onActive={setActive} />
-        <span className="atlas-axis atlas-axis-x"><span>Forward model</span><b>Method orientation</b><span>Learned inference</span></span>
-        <span className="atlas-axis atlas-axis-z"><span>Physical system</span><b>Working context</b><span>Software + data</span></span>
-        <span className="atlas-axis atlas-axis-y">Artifact scope ↑</span>
         <p>Drag to rotate · select a node.</p>
       </div>
       <nav className="atlas-project-switcher" aria-label="Select a project coordinate">
