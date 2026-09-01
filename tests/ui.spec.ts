@@ -436,6 +436,7 @@ test("archive, about, and contact annotations replace filler with useful UI", as
 test("home labels are restrained and every dossier opens with a compact orientation", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
+  await expect(page.getByText("Portfolio topology · Four documented systems", { exact: true })).toBeVisible();
   await expect(page.locator(".atlas-axis")).toHaveCount(0);
   await expect(page.locator(".home-signal-strip")).toHaveCount(0);
   const registerLines = page.locator(".atlas-register-heading h2").locator("span, em");

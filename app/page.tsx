@@ -10,7 +10,7 @@ export default function Home() {
     <>
       <section className="atlas-home-hero">
         <header className="atlas-home-intro">
-          <p className="atlas-kicker">Portfolio topology · Six documented systems</p>
+          <p className="atlas-kicker">Portfolio topology · Four documented systems</p>
           <h1>Research has<br /><em>terrain.</em></h1>
           <p>The surface maps what each project is—not how good it is—across computational orientation, working context, and artifact scope.</p>
           <div><Link className="atlas-action" href="/research">Understand the research <ArrowIcon /></Link><Link className="atlas-text-link" href="/archive">Browse every record <ArrowIcon /></Link></div>

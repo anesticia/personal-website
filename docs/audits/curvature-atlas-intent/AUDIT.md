@@ -24,7 +24,7 @@ Health: strong.
 
 - The graph now answers one specific question: where does each project sit by method orientation, working context, and artifact scope?
 - Selecting a project exposes its coordinate rationale. Animated ridges represent exact shared method labels and can be followed through accessible buttons.
-- The six-project selector remains the keyboard and touch equivalent of selecting a canvas node.
+- The four-project selector remains the keyboard and touch equivalent of selecting a canvas node.
 
 ## 3. Graph contract
 
