@@ -12,11 +12,9 @@ import { publication, site, works } from "@/data/site";
 export const metadata: Metadata = { title: "Research", description: "Current, evidence-bounded research in scientific machine learning, PDEs, numerical simulation, and research software." };
 
 const primarySlugs = ["reaction-diffusion", "orbit-pinn", "wave-pinn-thesis"];
-const systemsSlugs = ["codex-chess-lab", "geoguesser-engine"];
 
 export default function ResearchPage() {
   const primary = primarySlugs.map((slug) => works.find((work) => work.slug === slug)!);
-  const systems = systemsSlugs.map((slug) => works.find((work) => work.slug === slug)!);
   return (
     <>
       <header className="atlas-page-hero atlas-research-hero">
@@ -26,15 +24,6 @@ export default function ResearchPage() {
 
       <section className="atlas-research-index section-pad research-programs">
         <div className="atlas-research-list">{primary.map((work, index) => <ResearchRecord key={work.slug} work={work} index={index} />)}</div>
-      </section>
-
-      <section className="research-systems section-pad">
-        <header><p className="atlas-kicker">Research engineering · 02 systems</p><h2>The protocol is part of the product.</h2><p>These systems turn experimentation into a repeatable instrument. Their current blocker or promotion gate is displayed before any aspirational capability.</p></header>
-        <div>{systems.map((work) => { const record = atlasRecordMap.get(work.slug)!; const dossier = researchDossierMap.get(work.slug)!; return (
-          <Reveal key={work.slug}><Link className="research-system-row" href={`/work/${work.slug}`} style={{ "--record-accent": record.accent } as CSSProperties}>
-            <span>{record.code}</span><div><p>{work.eyebrow}</p><h3>{work.title}</h3></div><p>{dossier.oneLineClaim}</p><dl><div><dt>State</dt><dd>{dossier.maturity}</dd></div><div><dt>Next gate</dt><dd>{dossier.nextGate.title}</dd></div></dl><ArrowIcon />
-          </Link></Reveal>
-        ); })}</div>
       </section>
 
       <section className="atlas-publication-record research-publication-record">

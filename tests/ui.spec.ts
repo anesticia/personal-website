@@ -347,7 +347,7 @@ test("archive search and filters remain usable", async ({ page }) => {
   const search = page.getByPlaceholder("Search methods, topics, or tools");
   await expect(page.locator(".result-count")).toHaveText(`${works.length} entries`);
 
-  await search.fill("GeoGuesser");
+  await search.fill("Sobel");
   await expect(page.locator(".result-count")).toHaveText("1 entry");
   await expect(page.locator(".work-row")).toHaveCount(1);
 
@@ -496,14 +496,14 @@ test("the dossier field index tracks reading position and provenance expands", a
   await expect(provenance).toContainText("V5 pilot");
 });
 
-test("research page exposes programs, systems, and the public record", async ({ page }) => {
+test("research page exposes the retained programs and public record", async ({ page }) => {
   await page.goto("/research");
   await expect(page.locator(".research-reading-key")).toHaveCount(0);
   await expect(page.locator(".atlas-research-list article")).toHaveCount(3);
   await expect(page.getByRole("heading", { name: "Shared Structure-Preserving Local Flow" })).toBeVisible();
-  await expect(page.locator(".research-system-row")).toHaveCount(2);
+  await expect(page.locator(".research-system-row")).toHaveCount(0);
+  await expect(page.locator(".research-programs + .atlas-publication-record")).toHaveCount(1);
   await expect(page.getByText("V5 pilot evaluated", { exact: false })).toBeVisible();
-  await expect(page.getByText("D1 data collection blocked", { exact: false })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open evidence dossier" })).toHaveAttribute("href", "/work/object-classification-paper");
 });
 

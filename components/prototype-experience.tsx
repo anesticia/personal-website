@@ -149,7 +149,7 @@ function BrutalistIndex() {
   return (
     <div className="p-page p-brutalist">
       <SuiteDock active="brutalist-index" />
-      <header className="brutalist-header"><BrandMark /><span>Research index / six records</span><nav><Link href="/about">Info</Link><Link href="/contact">Contact</Link></nav></header>
+      <header className="brutalist-header"><BrandMark /><span>Research index / {works.length} records</span><nav><Link href="/about">Info</Link><Link href="/contact">Contact</Link></nav></header>
       <section className="brutalist-hero"><p>Andre Huizen is an informatics researcher working across scientific machine learning, PDEs, and numerical simulation.</p><h1>Research<br />without<br /><em>the gloss.</em></h1><div>Yogyakarta<br />2023—2026</div></section>
       <main className="brutalist-list">{works.map((work, index) => <Link href={`/work/${work.slug}`} key={work.slug}><span>{String(index + 1).padStart(2, "0")}</span><h2>{work.title}</h2><p>{work.kind} / {work.year}</p>{work.image && <div><ProjectImage work={work} sizes="260px" /></div>}<ArrowIcon /></Link>)}</main>
       <section className="brutalist-publication"><span>One published paper</span><h2>{publication.title}</h2><a href={publication.url} target="_blank" rel="noreferrer">DOI {publication.doi} <ExternalIcon /></a></section>

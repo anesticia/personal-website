@@ -9,7 +9,7 @@
 - Verified the ORCID identity, Atma Jaya University Yogyakarta Informatics affiliation, and research keywords.
 - Verified the 2023 JSI publication and DOI `10.30864/jsi.v18i1.601`.
 - Searched for Google Scholar but did not find a profile attributable with enough confidence to publish.
-- Reviewed local documentation for reaction–diffusion simulation, ORBIT-PINN, thesis wave experiments, Codex Chess Lab, GeoGuesser Engine, and Desktop Gremlin.
+- Reviewed the local documentation and publication records used by the retained portfolio entries.
 - Visually inspected generated research images before approving them as site assets.
 
 ### Product and design

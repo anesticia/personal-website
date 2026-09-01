@@ -80,7 +80,7 @@ No P0, P1, or P2 layout, hierarchy, color, image, or copy mismatch remains in th
 ### Pass 5 · dossier density and home-label comments
 
 - Reduced the About simulation overlay from a large serif instruction block to one 29 px-high mono readout. The interaction and exact Gray-Scott parameters remain visible without competing with the live field.
-- Reworked the shared dossier orientation instead of patching individual records. At 1564 × 912 all six hero regions now measure 601–644 px high, with zero horizontal overflow. Copy, image, ledger, and diagnostic surfaces stay equal-height. The Codex Chess Lab ledger begins at 208 px instead of being anchored near the bottom of an almost full-height panel.
+- Reworked the shared dossier orientation instead of patching individual records. At 1564 × 912 all four retained hero regions measure 601–644 px high, with zero horizontal overflow. Copy, image, ledger, and diagnostic surfaces stay equal-height.
 - Replaced the Reaction-diffusion hero image with an interactive long-horizon RMSE trace based on the four recorded checkpoints: t=200, 1500, 4500, and 9000. The visualization marks the mid-horizon break, supports pointer and button selection, and changes the visible readout to the selected recorded value. It is a diagnostic plot, not a reuse of the live Gray-Scott field on About.
 - Removed the six explanatory axis-end labels from the topology surface. The graph, project selector, inspector, and drag instruction remain, while the dedicated Graph contract below continues to explain the three-axis model once.
 - Removed the entire Latest research status strip. Its three links duplicated project status and next-gate information already available in the topology inspector and dossier register.
@@ -105,7 +105,7 @@ No P0, P1, or P2 layout, hierarchy, color, image, or copy mismatch remains in th
 
 ## Primary interactions tested
 
-- All six research dossier routes render with the expected chapter, metric, limitation, manifest, and next-gate structures.
+- All four research dossier routes render with the expected chapter, metric, limitation, manifest, and next-gate structures.
 - Sticky chapter links navigate to the correct section and update the active location.
 - The representative-figure lazy load completes after navigation.
 - The provenance register opens and exposes its evidence sources.

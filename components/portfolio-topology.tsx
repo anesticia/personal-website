@@ -19,9 +19,19 @@ function TopologyCanvas({ active, onActive }: { active: number; onActive: (index
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
+    // Only connections and the selection pulse change between frames. Keep the
+    // terrain at the same backing resolution instead of rasterizing 50 paths.
+    const terrain = document.createElement("canvas");
+    const terrainContext = terrain.getContext("2d");
+    if (!terrainContext) return;
     let animationFrame = 0;
     let lastFrame = 0;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let inViewport = false;
+    let terrainWidth = 0;
+    let terrainHeight = 0;
+    let terrainDpr = 0;
+    let projected: Array<PlotPoint & { baseX: number; baseY: number }> = [];
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const draw = (time = 0) => {
       const box = canvas.getBoundingClientRect();
@@ -36,51 +46,63 @@ function TopologyCanvas({ active, onActive }: { active: number; onActive: (index
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, box.width, box.height);
 
-      const surface = (x: number, z: number) => atlasRecords.reduce((sum, record) => {
-        const dx = x - record.terrain[0];
-        const dz = z - record.terrain[1];
-        return sum + record.terrain[2] * Math.exp(-(dx * dx + dz * dz) * 5.4);
-      }, 0) * 0.48;
+      if (terrainWidth !== box.width || terrainHeight !== box.height || terrainDpr !== dpr) {
+        terrainWidth = box.width;
+        terrainHeight = box.height;
+        terrainDpr = dpr;
+        terrain.width = pixelWidth;
+        terrain.height = pixelHeight;
+        terrainContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const surface = (x: number, z: number) => atlasRecords.reduce((sum, record) => {
+          const dx = x - record.terrain[0];
+          const dz = z - record.terrain[1];
+          return sum + record.terrain[2] * Math.exp(-(dx * dx + dz * dz) * 5.4);
+        }, 0) * 0.48;
 
-      const project = (x: number, y: number, z: number) => {
         const cy = Math.cos(rotation.yaw);
         const sy = Math.sin(rotation.yaw);
         const cp = Math.cos(rotation.pitch);
         const sp = Math.sin(rotation.pitch);
-        const rx = x * cy + z * sy;
-        const rz = -x * sy + z * cy;
-        const ry = y * cp - rz * sp;
-        const depth = y * sp + rz * cp;
-        const perspective = 2.4 / (depth + 3.7);
-        const scale = Math.min(box.width * 0.37, box.height * 0.54);
-        return [box.width * 0.47 + rx * perspective * scale, box.height * 0.64 - ry * perspective * scale] as const;
-      };
+        const project = (x: number, y: number, z: number) => {
+          const rx = x * cy + z * sy;
+          const rz = -x * sy + z * cy;
+          const ry = y * cp - rz * sp;
+          const depth = y * sp + rz * cp;
+          const perspective = 2.4 / (depth + 3.7);
+          const scale = Math.min(box.width * 0.37, box.height * 0.54);
+          return [box.width * 0.47 + rx * perspective * scale, box.height * 0.64 - ry * perspective * scale] as const;
+        };
 
-      const lines = 25;
-      context.lineWidth = 1;
-      for (let axis = 0; axis < 2; axis += 1) {
-        for (let row = 0; row < lines; row += 1) {
-          context.beginPath();
-          for (let column = 0; column < lines; column += 1) {
-            const a = -1.25 + (row / (lines - 1)) * 2.5;
-            const b = -1.25 + (column / (lines - 1)) * 2.5;
-            const x = axis ? a : b;
-            const z = axis ? b : a;
-            const [screenX, screenY] = project(x, surface(x, z), z);
-            if (column) context.lineTo(screenX, screenY); else context.moveTo(screenX, screenY);
+        const lines = 25;
+        terrainContext.lineWidth = 1;
+        for (let axis = 0; axis < 2; axis += 1) {
+          for (let row = 0; row < lines; row += 1) {
+            terrainContext.beginPath();
+            for (let column = 0; column < lines; column += 1) {
+              const a = -1.25 + (row / (lines - 1)) * 2.5;
+              const b = -1.25 + (column / (lines - 1)) * 2.5;
+              const x = axis ? a : b;
+              const z = axis ? b : a;
+              const [screenX, screenY] = project(x, surface(x, z), z);
+              if (column) terrainContext.lineTo(screenX, screenY); else terrainContext.moveTo(screenX, screenY);
+            }
+            terrainContext.strokeStyle = row % 4 === 0
+              ? `rgba(96,52,33,${compact ? ".58" : ".38"})`
+              : `rgba(96,52,33,${compact ? ".24" : ".14"})`;
+            terrainContext.stroke();
           }
-          context.strokeStyle = row % 4 === 0
-            ? `rgba(96,52,33,${compact ? ".58" : ".38"})`
-            : `rgba(96,52,33,${compact ? ".24" : ".14"})`;
-          context.stroke();
         }
-      }
 
-      const projected = atlasRecords.map((record, index) => {
-        const [x, y] = project(record.terrain[0], surface(record.terrain[0], record.terrain[1]) + 0.04, record.terrain[1]);
-        const [baseX, baseY] = project(record.terrain[0], 0, record.terrain[1]);
-        return { x, y, baseX, baseY, index };
-      });
+        projected = atlasRecords.map((record, index) => {
+          const [x, y] = project(record.terrain[0], surface(record.terrain[0], record.terrain[1]) + 0.04, record.terrain[1]);
+          const [baseX, baseY] = project(record.terrain[0], 0, record.terrain[1]);
+          return { x, y, baseX, baseY, index };
+        });
+      }
+      // Copy at an exact 1:1 pixel ratio, preserving antialiasing and sharpness.
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.drawImage(terrain, 0, 0);
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
       const selected = projected[active];
 
       atlasRecords.forEach((record, index) => {
@@ -130,19 +152,42 @@ function TopologyCanvas({ active, onActive }: { active: number; onActive: (index
       });
     };
 
+    const schedule = () => {
+      if (!animationFrame && inViewport && !document.hidden && !reduceMotion.matches) {
+        animationFrame = requestAnimationFrame(loop);
+      }
+    };
     const loop = (time: number) => {
+      animationFrame = 0;
+      if (!inViewport || document.hidden || reduceMotion.matches) return;
       if (time - lastFrame > 32) {
         draw(time);
         lastFrame = time;
       }
-      animationFrame = requestAnimationFrame(loop);
+      schedule();
     };
-    if (reduceMotion) draw(); else animationFrame = requestAnimationFrame(loop);
-    const observer = new ResizeObserver(() => draw(performance.now()));
+    const render = () => {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+      if (!inViewport || document.hidden) return;
+      draw(performance.now());
+      schedule();
+    };
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      inViewport = entry.isIntersecting;
+      render();
+    });
+    visibilityObserver.observe(canvas);
+    const observer = new ResizeObserver(render);
     observer.observe(canvas);
+    document.addEventListener("visibilitychange", render);
+    reduceMotion.addEventListener("change", render);
     return () => {
       observer.disconnect();
+      visibilityObserver.disconnect();
       cancelAnimationFrame(animationFrame);
+      document.removeEventListener("visibilitychange", render);
+      reduceMotion.removeEventListener("change", render);
     };
   }, [active, rotation]);
 

@@ -20,8 +20,6 @@ Last audited: 2026-07-13.
 | Reaction–diffusion systems | `E:\Moved\Paper-Diffusion-Reaction` | Reviewed summary and selected generated PNGs |
 | ORBIT-PINN | `E:\Moved\Paper-Lorentz-Particle` | Reviewed summary and architecture figure |
 | Wave propagation with PINNs | `E:\Moved\Notebook_TA` | Reviewed summary and comparison figure |
-| Codex Chess Lab | `E:\Moved\for-fun\chess-engine` | README/progress facts only; no models or match data |
-| GeoGuesser Engine | `E:\Moved\for-fun\geo-guesser-engine` | README/progress facts only; no imagery, tokens, or datasets |
 | Desktop Gremlin experiments | `E:\Moved\for-fun\Desktop_Gremlin` and public GitHub fork | Text-only transparent fork record |
 
 Local paths are documentation for maintainers and never rendered by the website.

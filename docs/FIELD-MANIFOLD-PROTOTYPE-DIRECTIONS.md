@@ -1,14 +1,12 @@
 # Field / Manifold Prototype Directions
 
-These four prototypes combine the directional logic of Physics Atlas 02 (Vector Field) with the curved research space of Physics Atlas 04 (Tensor Manifold). They use the six real projects already represented by the website and verified against their local repositories, GitHub records, or publication page.
+These four prototypes combine the directional logic of Physics Atlas 02 (Vector Field) with the curved research space of Physics Atlas 04 (Tensor Manifold). They use the four real projects represented by the website and verified against their local repositories, GitHub records, or publication page.
 
 ## Shared content model
 
 - Reaction–diffusion systems — active PDE research; local + private GitHub; Fourier pseudo-spectral ETDRK4 reference and six-method numerical benchmark.
 - ORBIT-PINN — active charged-particle research; local paper/notebook artifacts; rolling windows, hard continuity, Lorentz residuals, and energy invariants across uniform, mirror, and dipole fields.
 - Wave propagation with PINNs — active undergraduate thesis; local + private GitHub; PINN/FDTD comparison in homogeneous and heterogeneous media.
-- Codex Chess Lab — active software research; local + private GitHub; C++ UCI engine, evidence-led paired gates, platform-complete M5, and open M7 research.
-- GeoGuesser Engine — active software research; local + private GitHub; local-first explainable geolocation, FastAPI/SQLite baseline, and licensed manifest-first M4 dataset foundation.
 - Object classification through edge features — completed public paper; Sobel/Canny/Roberts + histogram features with Random Forest; JSI 18(1), DOI 10.30864/jsi.v18i1.601.
 
 ## 01 — Force Fabric
@@ -50,7 +48,7 @@ The first refinement made the hero terrain and the scroll-led evidence strata pe
 
 1. The 3D topology answers **where does this work sit, and what is it related to?** Its axes encode method orientation, working context, and artifact scope. Selecting a node reveals the coordinate rationale and traces only exact shared-method ridges.
 2. The graph contract answers **how should this abstraction be read?** It names all three axes and explicitly states that the topology contains no quality score.
-3. The evidence register answers **what supports the work, and where does the claim stop?** It compares the question under test, reference or protocol, source, and current boundary across all six projects.
+3. The evidence register answers **what supports the work, and where does the claim stop?** It compares the question under test, reference or protocol, source, and current boundary across all four projects.
 4. The second terrain and separate method cross-section were removed because their useful functions now belong to the topology itself.
 
 Interaction thesis:

@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createWavePainter, type WavePainter } from "@/lib/wave-painter";
+import { VERTICAL_INSET, MAX_WAVE_DISPLACEMENT } from "@/lib/wave-renderer";
 
 const RAIL_WIDTH = 64;
-const VERTICAL_INSET = 14;
+
 const WAVE_GRID_SIZE = 192;
-const MAX_WAVE_DISPLACEMENT = 21;
+
 const SIMULATION_HZ = 60;
 const MAX_CATCH_UP_STEPS = 60;
 const MAX_WAVE_LIFETIME_MS = 6_500;
@@ -170,132 +172,12 @@ function stepWave(motion: WaveMotion, simulationSteps: number) {
   if (motion.energy < 0.0015 && motion.probeEnergy < 0.012) clearWave(motion);
 }
 
-function sampleField(field: Float32Array, position: number) {
-  const coordinate = clamp(position) * (field.length - 1);
-  const lower = Math.floor(coordinate);
-  const upper = Math.min(field.length - 1, lower + 1);
-  const mix = coordinate - lower;
-  return field[lower] * (1 - mix) + field[upper] * mix;
-}
+const painters = new WeakMap<HTMLCanvasElement, WavePainter>();
 
 function drawWave(canvas: HTMLCanvasElement, progress: number, emphasized: boolean, motion: WaveMotion) {
-  const width = canvas.clientWidth || RAIL_WIDTH;
-  const height = canvas.clientHeight || window.innerHeight;
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  const renderWidth = Math.max(1, Math.round(width * ratio));
-  const renderHeight = Math.max(1, Math.round(height * ratio));
-
-  if (canvas.width !== renderWidth || canvas.height !== renderHeight) {
-    canvas.width = renderWidth;
-    canvas.height = renderHeight;
-  }
-
-  const context = canvas.getContext("2d");
-  if (!context) return;
-
-  context.setTransform(ratio, 0, 0, ratio, 0, 0);
-  context.clearRect(0, 0, width, height);
-
-  const usableHeight = Math.max(1, height - VERTICAL_INSET * 2);
-  const centerX = width - 26;
-  const strandSamples = motion.strands.map((strand) => {
-    const samples: Array<{ x: number; y: number }> = [];
-    for (let pixel = 0; pixel <= Math.ceil(usableHeight); pixel += 1) {
-      const position = clamp(pixel / usableHeight);
-      samples.push({
-        x: centerX + strand.offset + sampleField(strand.current, position) * MAX_WAVE_DISPLACEMENT,
-        y: VERTICAL_INSET + pixel,
-      });
-    }
-    return samples;
-  });
-
-  const stroke = (samples: Array<{ x: number; y: number }>, color: string, lineWidth: number) => {
-    context.beginPath();
-    samples.forEach((point, index) => {
-      if (index === 0) context.moveTo(point.x, point.y);
-      else context.lineTo(point.x, point.y);
-    });
-    context.strokeStyle = color;
-    context.lineWidth = lineWidth;
-    context.lineJoin = "round";
-    context.lineCap = "round";
-    context.stroke();
-  };
-
-  motion.strands.forEach((strand, strandIndex) => {
-    const samples = strandSamples[strandIndex];
-    stroke(samples, "rgba(27, 30, 25, 0.76)", emphasized ? 2.15 : 1.75);
-    stroke(samples, "rgba(235, 229, 213, 0.9)", emphasized ? 0.78 : 0.52);
-
-    const energyBands = [
-      { threshold: 0.018, width: 1.15, alpha: 0.36, glow: 0 },
-      { threshold: 0.12, width: 2.15, alpha: 0.58, glow: 0 },
-      { threshold: 0.28, width: 3.45, alpha: 0.88, glow: 5 },
-    ];
-    for (const band of energyBands) {
-      context.beginPath();
-      let drawing = false;
-      for (let index = 1; index < samples.length; index += 1) {
-        const previousPosition = (index - 1) / (samples.length - 1);
-        const position = index / (samples.length - 1);
-        const previousMagnitude = Math.abs(sampleField(strand.current, previousPosition));
-        const magnitude = Math.abs(sampleField(strand.current, position));
-        if (Math.max(previousMagnitude, magnitude) < band.threshold) {
-          drawing = false;
-          continue;
-        }
-        if (!drawing) context.moveTo(samples[index - 1].x, samples[index - 1].y);
-        context.lineTo(samples[index].x, samples[index].y);
-        drawing = true;
-      }
-      context.strokeStyle = `rgba(223, 132, 88, ${band.alpha})`;
-      context.lineWidth = band.width;
-      context.shadowColor = "rgba(223, 132, 88, 0.34)";
-      context.shadowBlur = band.glow;
-      context.lineCap = "round";
-      context.lineJoin = "round";
-      context.stroke();
-      context.shadowBlur = 0;
-    }
-  });
-
-  const probeIndex = Math.round(clamp(progress) * (strandSamples[0].length - 1));
-  const probe = {
-    x: strandSamples.reduce((sum, samples) => sum + samples[probeIndex].x, 0) / strandSamples.length,
-    y: strandSamples[0][probeIndex].y,
-  };
-  const probeRadius = (emphasized ? 7.5 : 6.5) + motion.probeEnergy * 1.2;
-
-  context.beginPath();
-  context.arc(probe.x, probe.y, probeRadius + 4 + motion.probeEnergy * 3, 0, Math.PI * 2);
-  context.fillStyle = `rgba(223, 132, 88, ${0.06 + motion.probeEnergy * 0.14})`;
-  context.fill();
-
-  context.beginPath();
-  context.moveTo(Math.max(2, probe.x - 18), probe.y);
-  context.lineTo(Math.min(width - 2, probe.x + 18), probe.y);
-  context.moveTo(probe.x, probe.y - 13);
-  context.lineTo(probe.x, probe.y + 13);
-  context.strokeStyle = "rgba(223, 132, 88, 0.98)";
-  context.lineWidth = (emphasized ? 1.7 : 1.3) + motion.probeEnergy * 0.55;
-  context.stroke();
-
-  context.beginPath();
-  context.arc(probe.x, probe.y, probeRadius + 2.25, 0, Math.PI * 2);
-  context.fillStyle = "rgba(27, 30, 25, 0.76)";
-  context.fill();
-
-  context.beginPath();
-  context.arc(probe.x, probe.y, probeRadius, 0, Math.PI * 2);
-  context.strokeStyle = "#df8458";
-  context.lineWidth = 2;
-  context.stroke();
-
-  context.beginPath();
-  context.arc(probe.x, probe.y, 2, 0, Math.PI * 2);
-  context.fillStyle = "#ebe5d5";
-  context.fill();
+  let painter = painters.get(canvas);
+  if (!painter) { painter = createWavePainter(canvas); painters.set(canvas, painter); }
+  painter.paint({ width: canvas.clientWidth || RAIL_WIDTH, height: canvas.clientHeight || window.innerHeight, ratio: Math.min(window.devicePixelRatio || 1, 2), progress, emphasized, motion });
 }
 
 export function WaveScrollbar() {
@@ -320,6 +202,15 @@ export function WaveScrollbar() {
     const render = (time: number) => {
       frameRef.current = null;
       const motion = motionRef.current;
+      // The native scrollbar is used on portrait/touch layouts. Do not run an
+      // invisible solver and rasterize a screen-height canvas behind it.
+      if (document.hidden) return;
+      if (!precisePointer.matches) {
+        clearWave(motion);
+        lastFrameTime = 0;
+        document.documentElement.classList.remove("wave-scrollbar-active");
+        return;
+      }
       const waveExpired = motion.lastEmission > 0 && time - motion.lastEmission >= MAX_WAVE_LIFETIME_MS;
       if (waveExpired) {
         clearWave(motion);
@@ -387,7 +278,7 @@ export function WaveScrollbar() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const delta = scrollY - lastScrollY;
-      if (!reducedMotion.matches && Math.abs(delta) > 0.25) {
+      if (precisePointer.matches && !document.hidden && !reducedMotion.matches && Math.abs(delta) > 0.25) {
         const motion = motionRef.current;
         motion.scrollDirection = delta > 0 ? 1 : -1;
         const propagationDirection = motion.scrollDirection > 0 ? -1 : 1;
@@ -443,9 +334,12 @@ export function WaveScrollbar() {
     rail.addEventListener("pointercancel", handlePointerUp);
     precisePointer.addEventListener("change", handleMediaChange);
     reducedMotion.addEventListener("change", handleMediaChange);
+    document.addEventListener("visibilitychange", handleMediaChange);
     scheduleRender();
 
     return () => {
+      painters.get(canvas)?.destroy();
+      painters.delete(canvas);
       if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
       resizeObserver.disconnect();
       window.removeEventListener("scroll", handleScroll);
@@ -455,6 +349,7 @@ export function WaveScrollbar() {
       rail.removeEventListener("pointercancel", handlePointerUp);
       precisePointer.removeEventListener("change", handleMediaChange);
       reducedMotion.removeEventListener("change", handleMediaChange);
+      document.removeEventListener("visibilitychange", handleMediaChange);
       document.documentElement.classList.remove("wave-scrollbar-active");
     };
   }, []);
